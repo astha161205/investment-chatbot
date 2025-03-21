@@ -79,66 +79,57 @@ async function updateMarketData() {
         }
 
         // Update market indices
-        const indicesHtml = data.market_summary.map(index => `
-            <div class="index-card">
-                <div class="name">${index.name}</div>
-                <div class="price">${index.price.toFixed(2)}</div>
-                <div class="change ${index.change > 0 ? 'positive-change' : 'negative-change'}">
-                    ${index.change.toFixed(2)} (${index.change_percent.toFixed(2)}%)
-                </div>
-            </div>
-        `).join('');
-        document.getElementById('market-indices').innerHTML = indicesHtml;
-
-        // Update top gainers
-        const gainersHtml = data.top_gainers.map(stock => `
-            <div class="stock-card">
-                <div class="symbol">${stock.symbol}</div>
-                <div class="name">${stock.name}</div>
-                <div class="change positive-change">
-                    +${stock.change_percent.toFixed(2)}%
-                </div>
-            </div>
-        `).join('');
-        document.getElementById('top-gainers').innerHTML = gainersHtml;
-
-        // Update top losers
-        const losersHtml = data.top_losers.map(stock => `
-            <div class="stock-card">
-                <div class="symbol">${stock.symbol}</div>
-                <div class="name">${stock.name}</div>
-                <div class="change negative-change">
-                    ${stock.change_percent.toFixed(2)}%
-                </div>
-            </div>
-        `).join('');
-        document.getElementById('top-losers').innerHTML = losersHtml;
-
-        // Update news
-        const newsHtml = data.news.map(item => `
-            <div class="news-item">
-                <a href="${item.link}" target="_blank">
-                    <div class="title">${item.title}</div>
-                    <div class="meta">
-                        ${item.publisher} • ${new Date(item.published).toLocaleString()}
+        let indicesHtml = '<div class="market-indices-grid">';
+        if (data.market_summary && data.market_summary.length > 0) {
+            indicesHtml += data.market_summary.map(index => `
+                <div class="index-card">
+                    <div class="name">${index.name}</div>
+                    <div class="price">${index.price.toFixed(2)}</div>
+                    <div class="change ${index.change > 0 ? 'positive-change' : 'negative-change'}">
+                        ${index.change.toFixed(2)} (${index.change_percent.toFixed(2)}%)
                     </div>
-                </a>
-            </div>
-        `).join('');
-        document.getElementById('news-list').innerHTML = newsHtml;
+                </div>
+            `).join('');
+        } else {
+            indicesHtml += '<div class="error-message">Market data temporarily unavailable</div>';
+        }
+        indicesHtml += '</div>';
+        
+        // Update market news
+        let newsHtml = '<div class="market-news">';
+        if (data.news && data.news.length > 0) {
+            newsHtml += '<h5>Latest Market News</h5>';
+            newsHtml += data.news.map(item => `
+                <div class="news-item">
+                    <a href="${item.link}" target="_blank" class="news-title">${item.title}</a>
+                    <div class="news-meta">
+                        <span class="publisher">${item.publisher}</span>
+                        <span class="published">${item.published}</span>
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            newsHtml += '<div class="error-message">News temporarily unavailable</div>';
+        }
+        newsHtml += '</div>';
+
+        // Update the DOM
+        document.getElementById('market-updates').innerHTML = indicesHtml + newsHtml;
 
     } catch (error) {
-        console.error('Error updating market data:', error);
+        console.error('Error in updateMarketData:', error);
+        document.getElementById('market-updates').innerHTML = 
+            '<div class="error-message">Failed to load market data. Please try again later.</div>';
     }
 }
+
+// Initial update and set interval
+updateMarketData();
+setInterval(updateMarketData, 30000); // Update every 30 seconds
 
 // Update portfolio every minute
 updatePortfolio();
 setInterval(updatePortfolio, 60000);
-
-// Update market data every 5 minutes
-updateMarketData();
-setInterval(updateMarketData, 5 * 60 * 1000);
 
 // Event listener for Enter key in chat
 document.getElementById('user-input').addEventListener('keypress', function(e) {

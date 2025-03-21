@@ -9,9 +9,21 @@
 }
 
 body {
-    background-color: var(--background-light);
     color: var(--text-primary);
     min-height: 100vh;
+    position: relative;
+    background: transparent;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4); /* dark overlay */
+    z-index: -1;
 }
 
 .container {
@@ -77,6 +89,7 @@ body {
     padding: 1rem;
     background: var(--background-light);
     scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--background-light);
 }
 
 .chat-messages::-webkit-scrollbar {
@@ -206,38 +219,24 @@ body {
     overflow: hidden;
 }
 
-/* Video Background */
-.video-background {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
-}
-
-.video-background::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.3);
-    z-index: 1;
-}
-
-.video-background video {
-    position: absolute;
-    top: 50%;
-    left: 50%;
+/* Video background styles */
+.video-background,
+#background-video {
+    position: fixed;
+    right: 0;
+    bottom: 0;
     min-width: 100%;
     min-height: 100%;
     width: auto;
     height: auto;
-    transform: translateX(-50%) translateY(-50%);
+    z-index: -1;
+}
+
+.video-background video,
+#background-video {
     object-fit: cover;
+    width: 100vw;
+    height: 100vh;
 }
 
 /* Content Styles */
@@ -383,36 +382,114 @@ body {
     margin-bottom: 30px;
 }
 
-.indices-grid {
+.market-indices-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    max-height: 30vh;
+    overflow-y: auto;
 }
 
 .index-card {
-    background: #f8f9fa;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
+    background: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .index-card .name {
-    font-weight: bold;
-    color: #2c3e50;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
 }
 
 .index-card .price {
-    font-size: 1.2em;
-    margin: 5px 0;
+    font-size: 1.2rem;
+    margin-bottom: 0.25rem;
 }
 
 .positive-change {
-    color: #28a745;
+    color: #10b981;
 }
 
 .negative-change {
-    color: #dc3545;
+    color: #ef4444;
+}
+
+.market-news {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-height: calc(70vh - 2rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--background-light);
+}
+
+.market-news::-webkit-scrollbar {
+    width: 6px;
+}
+
+.market-news::-webkit-scrollbar-track {
+    background: var(--background-light);
+    border-radius: 3px;
+}
+
+.market-news::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+.market-news h5 {
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    font-weight: 600;
+    position: sticky;
+    top: 0;
+    background: white;
+    padding: 0.5rem 0;
+    z-index: 1;
+}
+
+.news-item {
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.news-item:last-child {
+    border-bottom: none;
+}
+
+.news-title {
+    display: block;
+    color: var(--text-primary);
+    font-weight: 500;
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+}
+
+.news-title:hover {
+    color: var(--primary-color);
+}
+
+.news-meta {
+    font-size: 0.875rem;
+    color: #64748b;
+}
+
+.news-meta .publisher {
+    font-weight: 500;
+    margin-right: 1rem;
+}
+
+.error-message {
+    text-align: center;
+    padding: 2rem;
+    color: #64748b;
+    font-style: italic;
 }
 
 .stock-list {
@@ -470,4 +547,23 @@ body {
 .news-item a {
     text-decoration: none;
     color: inherit;
+}
+
+*::-webkit-scrollbar {
+    width: 6px;
+}
+
+*::-webkit-scrollbar-track {
+    background: var(--background-light);
+    border-radius: 3px;
+}
+
+*::-webkit-scrollbar-thumb {
+    background-color: var(--primary-color);
+    border-radius: 3px;
+}
+
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--background-light);
 }

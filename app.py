@@ -26,6 +26,18 @@ login_manager.login_message = 'Please log in to access this feature.'
 
 # API Keys
 ALPHA_VANTAGE_KEY = os.getenv('ALPHA_VANTAGE_KEY')
+print(f"Using Alpha Vantage API key: {ALPHA_VANTAGE_KEY}")  # Debug log
+
+# Verify Alpha Vantage API key
+try:
+    test_url = f"https://www.alphavantage.co/query?function=TIME_SERIES_INTRADAY&symbol=IBM&interval=5min&apikey={ALPHA_VANTAGE_KEY}"
+    response = requests.get(test_url)
+    if 'Note' in response.json():
+        print("Alpha Vantage API limit reached. Please wait a minute before trying again.")
+    elif 'Error Message' in response.json():
+        print("Alpha Vantage API key error:", response.json()['Error Message'])
+except Exception as e:
+    print("Error verifying Alpha Vantage API key:", str(e))
 
 # Initialize APIs and caches
 cg = CoinGeckoAPI()
@@ -230,68 +242,125 @@ def get_market_updates():
                     market_summary.append({
                         'name': name,
                         'price': info['regularMarketPrice'],
-                        'change': info['regularMarketChange'],
-                        'change_percent': info['regularMarketChangePercent']
+                        'change': info.get('regularMarketChange', 0),
+                        'change_percent': info.get('regularMarketChangePercent', 0)
                     })
             except Exception as e:
                 print(f"Error fetching {name}: {str(e)}")
-
-        # Get top gaining and losing stocks from S&P 500
-        sp500 = yf.Ticker('^GSPC')
-        sp500_components = sp500.info.get('components', [])[:50]  # Get first 50 components
-        
-        stocks_data = []
-        for symbol in sp500_components:
-            try:
-                stock = yf.Ticker(symbol)
-                info = stock.info
-                if info and 'regularMarketPrice' in info:
-                    stocks_data.append({
-                        'symbol': symbol,
-                        'name': info.get('longName', symbol),
-                        'price': info['regularMarketPrice'],
-                        'change_percent': info['regularMarketChangePercent']
-                    })
-            except:
                 continue
-
-        # Sort to get top gainers and losers
-        stocks_data.sort(key=lambda x: x['change_percent'], reverse=True)
-        top_gainers = stocks_data[:5]
-        top_losers = stocks_data[-5:]
 
         # Get latest market news
         news_items = []
-        try:
-            msft = yf.Ticker("MSFT")  # Using Microsoft as a proxy for market news
-            news = msft.news
-            for item in news[:10]:  # Get last 10 news items
-                news_items.append({
-                    'title': item['title'],
-                    'publisher': item['publisher'],
-                    'link': item['link'],
-                    'published': datetime.fromtimestamp(item['providerPublishTime']).strftime('%Y-%m-%d %H:%M:%S')
-                })
-        except Exception as e:
-            print(f"Error fetching news: {str(e)}")
+        
+        # Function to safely get news from Alpha Vantage
+        def get_alpha_vantage_news(endpoint_params):
+            try:
+                url = f"https://www.alphavantage.co/query?apikey={ALPHA_VANTAGE_KEY}&{endpoint_params}"
+                response = requests.get(url, timeout=5)  # Add timeout
+                data = response.json()
+                
+                if 'Note' in data:
+                    print("API call frequency limit reached:", data['Note'])
+                    return None
+                    
+                return data
+            except Exception as e:
+                print(f"Error in Alpha Vantage request: {str(e)}")
+                return None
 
-        return {
+        # Try different news sources
+        news_sources = [
+            # Top gainers/losers
+            "function=TOP_GAINERS_LOSERS",
+            # Tech news
+            "function=NEWS_SENTIMENT&topics=technology&limit=5",
+            # Earnings news
+            "function=NEWS_SENTIMENT&topics=earnings&limit=5",
+            # Specific company news
+            "function=NEWS_SENTIMENT&tickers=MSFT,AAPL,GOOGL&limit=5"
+        ]
+
+        for source in news_sources:
+            if len(news_items) >= 5:  # If we have enough news items, stop
+                break
+                
+            data = get_alpha_vantage_news(source)
+            if not data:
+                continue
+
+            if 'top_gainers' in data and data['top_gainers']:
+                current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                # Add top gainers
+                for item in data['top_gainers'][:2]:
+                    news_items.append({
+                        'title': f"Market Mover: {item['ticker']} up {item['change_percentage']}",
+                        'publisher': 'Market Data',
+                        'link': f"https://www.google.com/finance/quote/{item['ticker']}:NYSE",
+                        'published': current_time
+                    })
+                # Add top losers
+                if 'top_losers' in data and data['top_losers']:
+                    for item in data['top_losers'][:1]:
+                        news_items.append({
+                            'title': f"Market Alert: {item['ticker']} down {item['change_percentage']}",
+                            'publisher': 'Market Data',
+                            'link': f"https://www.google.com/finance/quote/{item['ticker']}:NYSE",
+                            'published': current_time
+                        })
+            
+            elif 'feed' in data and data['feed']:
+                for item in data['feed']:
+                    if len(news_items) >= 10:  # Limit total news items
+                        break
+                    news_items.append({
+                        'title': item.get('title', ''),
+                        'publisher': item.get('source', 'Financial News'),
+                        'link': item.get('url', '#'),
+                        'published': item.get('time_published', '')[:19].replace('T', ' ')
+                    })
+
+        # If we still have no news, use market summary as news
+        if not news_items and market_summary:
+            current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            for index in market_summary:
+                change_direction = "up" if index['change'] > 0 else "down"
+                news_items.append({
+                    'title': f"Market Update: {index['name']} {change_direction} {abs(index['change_percent']):.2f}%",
+                    'publisher': 'Market Summary',
+                    'link': '#',
+                    'published': current_time
+                })
+
+        # If we still have no news, add a default message
+        if not news_items:
+            news_items.append({
+                'title': 'Market data is being updated. Please check back in a moment.',
+                'publisher': 'System',
+                'link': '#',
+                'published': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            })
+
+        result = {
             'market_summary': market_summary,
-            'top_gainers': top_gainers,
-            'top_losers': top_losers,
             'news': news_items
         }
+        return result
+
     except Exception as e:
         print(f"Error in get_market_updates: {str(e)}")
         return None
 
 @app.route('/api/market-updates')
 def market_updates():
-    """API endpoint for market updates"""
-    updates = get_market_updates()
-    if updates:
+    try:
+        updates = get_market_updates()
+        if updates is None:
+            print("No market updates returned")
+            return jsonify({'error': 'Failed to fetch market updates'}), 500
         return jsonify(updates)
-    return jsonify({'error': 'Could not fetch market updates'}), 500
+    except Exception as e:
+        print(f"Error in market_updates endpoint: {str(e)}")
+        return jsonify({'error': 'Internal server error'}), 500
 
 # Database Models
 class User(UserMixin, db.Model):
