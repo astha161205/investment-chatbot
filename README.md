@@ -1,6 +1,4 @@
 # investment-chatbot
-# Investment Chatbot
-
 An intelligent investment assistant that helps users manage their portfolio, track market updates, and make informed investment decisions. Built with Python, Flask, and modern web technologies.
 
 ## Features
