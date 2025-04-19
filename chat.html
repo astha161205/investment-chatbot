@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Investment Advisor - Chat</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <a href="/" class="back-button">
+                <i class="fas fa-arrow-left"></i>
+                <span>Back</span>
+            </a>
+            <h1>AI Investment Advisor</h1>
+            <p>Chat with our AI to get investment insights and stock information</p>
+        </header>
+        
+        <div class="main-content">
+            <div class="market-overview">
+                <h2>Market Overview</h2>
+                <div class="market-cards" id="marketCards">
+                    <!-- Market cards will be loaded here -->
+                </div>
+            </div>
+            
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2>Investment Assistant</h2>
+                    <div class="chat-controls">
+                        <button class="control-btn" id="clearChat" title="Clear Chat">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot">
+                        <div class="message-content">
+                            <p>Hello! I'm your AI Investment Assistant. How can I help you today? You can ask me about:</p>
+                            <ul>
+                                <li>Stock information for Indian or global markets</li>
+                                <li>Investment strategies and advice</li>
+                                <li>Market trends and analysis</li>
+                                <li>Company performance and financial data</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="typing-indicator" id="typingIndicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                
+                <div class="chat-input-container">
+                    <div class="input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="userInput" placeholder="Ask about stocks, investments, or market trends...">
+                    </div>
+                    <button id="sendButton">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const sendButton = document.getElementById('sendButton');
+        const typingIndicator = document.getElementById('typingIndicator');
+        const clearChatButton = document.getElementById('clearChat');
+        const marketCards = document.getElementById('marketCards');
+        
+        // Example stock symbols for Indian and global markets
+        const stocks = [
+            { symbol: 'RELIANCE.NS', name: 'Reliance Industries' },
+            { symbol: 'TCS.NS', name: 'Tata Consultancy Services' },
+            { symbol: 'HDFCBANK.NS', name: 'HDFC Bank' },
+            { symbol: 'INFY.NS', name: 'Infosys' },
+            { symbol: 'AAPL', name: 'Apple Inc.' },
+            { symbol: 'MSFT', name: 'Microsoft' },
+            { symbol: 'AMZN', name: 'Amazon' },
+            { symbol: 'GOOGL', name: 'Alphabet (Google)' }
+        ];
+        
+        // Load market overview cards
+        function loadMarketCards() {
+            marketCards.innerHTML = '';
+            
+            stocks.forEach(stock => {
+                const card = document.createElement('div');
+                card.className = 'market-card loading';
+                card.innerHTML = `
+                    <i class="fas fa-chart-line"></i>
+                    <div>
+                        <h3>${stock.name}</h3>
+                        <p class="price">Loading...</p>
+                        <p class="change">Loading...</p>
+                    </div>
+                    <div class="loading-spinner"></div>
+                `;
+                marketCards.appendChild(card);
+                
+                // Fetch stock data
+                fetchStockData(stock.symbol, card);
+            });
+        }
+        
+        // Fetch stock data from our API
+        async function fetchStockData(symbol, card) {
+            try {
+                const response = await fetch(`/stock?ticker=${symbol}`);
+                const data = await response.json();
+                
+                if (data && data.Close) {
+                    // Get the first item in data.Close (first key-value pair)
+                    const closeValues = Object.values(data.Close);
+                    const openValues = Object.values(data.Open);
+                    
+                    const lastPrice = closeValues[0];
+                    const prevPrice = openValues[0];
+                    const change = lastPrice - prevPrice;
+                    const percentChange = (change / prevPrice) * 100;
+                    
+                    const priceElement = card.querySelector('.price');
+                    const changeElement = card.querySelector('.change');
+                    
+                    priceElement.textContent = `$${lastPrice.toFixed(2)}`;
+                    
+                    if (change >= 0) {
+                        changeElement.textContent = `+${change.toFixed(2)} (${percentChange.toFixed(2)}%)`;
+                        changeElement.className = 'change positive';
+                    } else {
+                        changeElement.textContent = `${change.toFixed(2)} (${percentChange.toFixed(2)}%)`;
+                        changeElement.className = 'change negative';
+                    }
+                    
+                    card.classList.remove('loading');
+                }
+            } catch (error) {
+                console.error(`Error fetching data for ${symbol}:`, error);
+                card.classList.remove('loading');
+                card.classList.add('error');
+                card.querySelector('.price').textContent = 'Error';
+                card.querySelector('.change').textContent = 'Failed to load data';
+            }
+        }
+        
+        // Add user message to chat
+        function addUserMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user';
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <p>${message}</p>
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Add bot message to chat
+        function addBotMessage(message) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message bot';
+            messageDiv.innerHTML = `
+                <div class="message-content">
+                    <p>${message}</p>
+                </div>
+            `;
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Show typing indicator
+        function showTypingIndicator() {
+            typingIndicator.style.display = 'flex';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            typingIndicator.style.display = 'none';
+        }
+        
+        // Send message to API and get response
+        async function sendMessage(message) {
+            showTypingIndicator();
+            
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                hideTypingIndicator();
+                addBotMessage(data);
+            } catch (error) {
+                console.error('Error sending message:', error);
+                hideTypingIndicator();
+                addBotMessage('Sorry, I encountered an error. Please try again later.');
+            }
+        }
+        
+        // Handle send button click
+        sendButton.addEventListener('click', () => {
+            const message = userInput.value.trim();
+            if (message) {
+                addUserMessage(message);
+                userInput.value = '';
+                sendMessage(message);
+            }
+        });
+        
+        // Handle enter key press in input
+        userInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                const message = userInput.value.trim();
+                if (message) {
+                    addUserMessage(message);
+                    userInput.value = '';
+                    sendMessage(message);
+                }
+            }
+        });
+        
+        // Handle clear chat button
+        clearChatButton.addEventListener('click', () => {
+            // Keep only the first welcome message
+            const welcomeMessage = chatMessages.querySelector('.message');
+            chatMessages.innerHTML = '';
+            chatMessages.appendChild(welcomeMessage);
+        });
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            loadMarketCards();
+        });
+    </script>
+</body>
+</html> 
