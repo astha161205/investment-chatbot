@@ -59,175 +59,8 @@ def stock():
     
     return jsonify(result)
 
-# Function to check for stock information in the query
-def check_for_stock_info(query):
-    query = query.lower()
-    
-    # Define common patterns for stock price queries
-    price_patterns = [
-        r'(?:price|value|worth|stock|how (?:much|is)|what\'s|whats|what is).+?([a-zA-Z0-9&\^\._ ]+)(?:\s|$|stock|price|\?)',
-        r'(?:tell|information|info|details|data).+?(?:about|on|for) ([a-zA-Z0-9&\^\._ ]+)(?:\s|$|\?)',
-        r'(^[a-zA-Z0-9]+$)',  # Single word that might be a stock symbol
-        r'search (?:for )?([a-zA-Z0-9&\^\._ ]+)'  # Direct search request
-    ]
-    
-    # Try to extract potential stock symbols
-    potential_symbols = []
-    
-    # Check all patterns
-    for pattern in price_patterns:
-        matches = re.findall(pattern, query)
-        if matches:
-            for match in matches:
-                if isinstance(match, tuple):
-                    for group in match:
-                        if group and len(group) > 0:
-                            potential_symbols.append(group)
-                else:
-                    if match and len(match) > 0:
-                        potential_symbols.append(match)
-    
-    # Extract any potential stock symbols (words that look like tickers)
-    # This helps catch direct mentions of tickers like "AAPL" or "RELIANCE.NS"
-    words = re.findall(r'\b[A-Za-z0-9\.]+\b', query)
-    for word in words:
-        if (len(word) >= 2 and len(word) <= 10) or '.' in word:
-            potential_symbols.append(word)
-    
-    # Common stock mapping for well-known companies
-    stock_mapping = {
-        "apple": "AAPL",
-        "microsoft": "MSFT", 
-        "google": "GOOGL",
-        "alphabet": "GOOGL",
-        "amazon": "AMZN",
-        "tesla": "TSLA",
-        "meta": "META", 
-        "facebook": "META",
-        "netflix": "NFLX",
-        "nvidia": "NVDA",
-        "hdfc bank": "HDFCBANK.NS",
-        "reliance": "RELIANCE.NS",
-        "tata": "TCS.NS",
-        "infosys": "INFY.NS",
-        "state bank": "SBIN.NS",
-        "sbi": "SBIN.NS",
-        "s&p": "^GSPC",
-        "s&p 500": "^GSPC",
-        "dow": "^DJI",
-        "dow jones": "^DJI",
-        "nasdaq": "^IXIC",
-        "nifty": "^NSEI",
-        "nifty 50": "^NSEI",
-        "sensex": "^BSESN"
-    }
-    
-    # Remove duplicates and sort by length (shorter symbols are more likely to be valid tickers)
-    potential_symbols = list(set(potential_symbols))
-    potential_symbols.sort(key=len)
-    
-    app.logger.info(f"Potential stock symbols extracted: {potential_symbols}")
-    
-    # Clean up symbols and try them
-    for symbol in potential_symbols:
-        # Clean the symbol
-        clean_symbol = symbol.strip().upper()
-        clean_symbol = re.sub(r'(STOCK|PRICE|\?|OF|THE|FOR)$', '', clean_symbol).strip()
-        
-        # Skip very common words that might be extracted but aren't likely to be stocks
-        if clean_symbol.lower() in ['a', 'the', 'and', 'or', 'of', 'to', 'for', 'in', 'on', 'by', 'all', 'any']:
-            continue
-            
-        # Check if this matches known mappings (case insensitive)
-        symbol_key = clean_symbol.lower()
-        if symbol_key in stock_mapping:
-            ticker_to_try = stock_mapping[symbol_key]
-            app.logger.info(f"Found mapping for {clean_symbol}: {ticker_to_try}")
-            
-            # Try to get stock info
-            stock_info = get_specific_stock_info(ticker_to_try)
-            if stock_info:
-                return stock_info
-        
-        # Define common exchanges and variations to try
-        # This covers most major global markets
-        exchange_variations = [
-            '',         # Raw symbol (e.g., AAPL)
-            '.NS',      # India - National Stock Exchange
-            '.BO',      # India - Bombay Stock Exchange
-            '.L',       # London Stock Exchange
-            '.PA',      # Euronext Paris
-            '.F',       # Frankfurt Stock Exchange
-            '.TO',      # Toronto Stock Exchange
-            '.AX',      # Australian Securities Exchange
-            '.SA',      # Sao Paulo Stock Exchange
-            '.T',       # Tokyo Stock Exchange
-            '.HK',      # Hong Kong Stock Exchange
-            '.SZ',      # Shenzhen Stock Exchange
-            '.SS',      # Shanghai Stock Exchange
-            '.SW',      # Swiss Exchange
-            '-USD',     # Cryptocurrency format
-            '.SI',      # Singapore Exchange
-            '.JK',      # Jakarta Stock Exchange
-            '.KS',      # Korea Stock Exchange
-            '.KL',      # Kuala Lumpur Stock Exchange
-            '.V',       # TSX Venture Exchange (Canada)
-            '.MX',      # Mexico Stock Exchange
-            '.ST',      # Stockholm Stock Exchange
-            '.CO',      # Copenhagen Stock Exchange
-            '.OL',      # Oslo Stock Exchange
-            '.NZ',      # New Zealand Stock Exchange
-            '.BR',      # Brussels Stock Exchange
-            '.MC',      # Madrid Stock Exchange
-            '.AT',      # Athens Stock Exchange
-            '.VI',      # Vienna Stock Exchange
-        ]
-        
-        # Index prefix for major indices
-        if len(clean_symbol) <= 5:
-            exchange_variations.append('^' + clean_symbol)  # Index format like ^GSPC
-        
-        # Try the raw symbol first (highest priority)
-        if '.' not in clean_symbol:  # Only if it doesn't already have an exchange suffix
-            stock_info = get_specific_stock_info(clean_symbol)
-            if stock_info:
-                return stock_info
-            
-        # Try various exchanges - only if the symbol doesn't already have a suffix
-        if '.' not in clean_symbol and '-' not in clean_symbol:
-            for exchange in exchange_variations:
-                variation = clean_symbol + exchange
-                app.logger.info(f"Trying stock symbol with exchange: {variation}")
-                stock_info = get_specific_stock_info(variation)
-                if stock_info:
-                    return stock_info
-                    
-        # If the symbol already has a suffix (like .NS) try it directly
-        elif '.' in clean_symbol:
-            stock_info = get_specific_stock_info(clean_symbol)
-            if stock_info:
-                return stock_info
-                
-        # Try removing spaces (for multi-word names)
-        if ' ' in clean_symbol:
-            no_spaces = clean_symbol.replace(' ', '')
-            stock_info = get_specific_stock_info(no_spaces)
-            if stock_info:
-                return stock_info
-                
-            # Try with exchanges
-            for exchange in exchange_variations:
-                if exchange:  # Skip empty exchange
-                    variation = no_spaces + exchange
-                    app.logger.info(f"Trying no-space symbol with exchange: {variation}")
-                    stock_info = get_specific_stock_info(variation)
-                    if stock_info:
-                        return stock_info
-    
-    return None
-
 # Function to get information for a specific stock symbol
-def get_specific_stock_info(symbol):
+def get_specific_stock_info(symbol, include_recommendation=True):
     try:
         app.logger.info(f"Fetching data for stock symbol: {symbol}")
         stock = yf.Ticker(symbol)
@@ -306,11 +139,372 @@ def get_specific_stock_info(symbol):
             if 'exchange' in info and info['exchange']:
                 result += f"Exchange: {info['exchange']}. "
                 
+        # Add recommendation if requested
+        if include_recommendation:
+            recommendation = get_stock_recommendation(symbol, stock, info, data)
+            if recommendation:
+                result += f"\n\n{recommendation}"
+                
         app.logger.info(f"Successfully retrieved info for {symbol}")
         return result
     except Exception as e:
         app.logger.error(f"Error fetching stock data for {symbol}: {str(e)}")
         return None
+
+# Function to analyze a stock and provide a recommendation
+def get_stock_recommendation(symbol, stock, info, current_data):
+    try:
+        # Check if we have the necessary data
+        if not info or not isinstance(info, dict):
+            return None
+            
+        # Initialize score and reasons
+        fundamental_score = 0
+        technical_score = 0
+        pros = []
+        cons = []
+        
+        # 1. FUNDAMENTAL ANALYSIS
+        # ---------------------
+        
+        # P/E Ratio (Price to Earnings)
+        if 'trailingPE' in info and info['trailingPE'] is not None:
+            pe_ratio = info['trailingPE']
+            if pe_ratio < 15:
+                fundamental_score += 2
+                pros.append(f"Low P/E ratio ({pe_ratio:.2f}) suggests the stock may be undervalued")
+            elif pe_ratio > 30:
+                fundamental_score -= 1
+                cons.append(f"High P/E ratio ({pe_ratio:.2f}) may indicate overvaluation")
+                
+        # Debt to Equity
+        if 'debtToEquity' in info and info['debtToEquity'] is not None:
+            debt_to_equity = info['debtToEquity']
+            if debt_to_equity < 0.5:
+                fundamental_score += 1
+                pros.append(f"Low debt-to-equity ratio ({debt_to_equity:.2f}) indicates financial stability")
+            elif debt_to_equity > 1.5:
+                fundamental_score -= 1
+                cons.append(f"High debt-to-equity ratio ({debt_to_equity:.2f}) may be a concern")
+                
+        # Profit Margins
+        if 'profitMargins' in info and info['profitMargins'] is not None:
+            profit_margin = info['profitMargins'] * 100  # Convert to percentage
+            if profit_margin > 15:
+                fundamental_score += 1
+                pros.append(f"Strong profit margin ({profit_margin:.2f}%)")
+            elif profit_margin < 5:
+                fundamental_score -= 1
+                cons.append(f"Low profit margin ({profit_margin:.2f}%)")
+                
+        # Dividend Yield
+        if 'dividendYield' in info and info['dividendYield'] is not None:
+            dividend_yield = info['dividendYield'] * 100  # Convert to percentage
+            if dividend_yield > 3:
+                fundamental_score += 1
+                pros.append(f"Good dividend yield ({dividend_yield:.2f}%)")
+        
+        # 2. TECHNICAL ANALYSIS
+        # ---------------------
+        
+        # Get historical data for technical analysis
+        historical_data = stock.history(period="200d")
+        
+        if not historical_data.empty and len(historical_data) > 50:
+            # Moving Averages
+            current_price = current_data['Close'].iloc[-1]
+            ma50 = historical_data['Close'].tail(50).mean()
+            ma200 = historical_data['Close'].tail(200).mean()
+            
+            # Golden Cross / Death Cross
+            if ma50 > ma200:
+                technical_score += 1
+                pros.append(f"50-day moving average above 200-day moving average (bullish)")
+            else:
+                technical_score -= 1
+                cons.append(f"50-day moving average below 200-day moving average (bearish)")
+                
+            # Current Price vs Moving Averages
+            if current_price > ma50:
+                technical_score += 1
+                pros.append(f"Price above 50-day moving average")
+            else:
+                technical_score -= 1
+                cons.append(f"Price below 50-day moving average")
+                
+            # Relative Strength Index (RSI)
+            try:
+                # Calculate 14-day RSI
+                delta = historical_data['Close'].diff()
+                gain = delta.where(delta > 0, 0).rolling(window=14).mean()
+                loss = -delta.where(delta < 0, 0).rolling(window=14).mean()
+                rs = gain / loss
+                rsi = 100 - (100 / (1 + rs)).iloc[-1]
+                
+                if rsi < 30:
+                    technical_score += 1
+                    pros.append(f"RSI is {rsi:.2f} - stock may be oversold (potential buy signal)")
+                elif rsi > 70:
+                    technical_score -= 1
+                    cons.append(f"RSI is {rsi:.2f} - stock may be overbought (potential sell signal)")
+            except Exception as e:
+                app.logger.warning(f"Couldn't calculate RSI: {str(e)}")
+                
+        # 3. GENERATE RECOMMENDATION
+        # -------------------------
+        total_score = fundamental_score + technical_score
+        
+        recommendation = "Investment Analysis:\n"
+        
+        # Strengths
+        if pros:
+            recommendation += "\nStrengths:\n"
+            for pro in pros[:3]:  # Limit to top 3 pros
+                recommendation += f"• {pro}\n"
+                
+        # Weaknesses
+        if cons:
+            recommendation += "\nCautions:\n"
+            for con in cons[:3]:  # Limit to top 3 cons
+                recommendation += f"• {con}\n"
+        
+        # Overall Recommendation
+        recommendation += "\nRecommendation: "
+        
+        if total_score >= 3:
+            recommendation += "⭐⭐⭐⭐⭐ STRONG BUY - This stock shows multiple positive indicators."
+        elif total_score == 2:
+            recommendation += "⭐⭐⭐⭐ BUY - This stock appears favorable for investment."
+        elif total_score == 1:
+            recommendation += "⭐⭐⭐ CONSIDER - This stock may be worth considering with further research."
+        elif total_score == 0:
+            recommendation += "⭐⭐ NEUTRAL - This stock shows mixed signals."
+        elif total_score == -1:
+            recommendation += "⭐ CAUTION - Some negative indicators suggest careful consideration."
+        else:
+            recommendation += "NOT RECOMMENDED - Multiple negative indicators suggest looking elsewhere."
+            
+        recommendation += "\n\nNote: This is an automated analysis and not financial advice. Always do your own research before investing."
+        
+        return recommendation
+    except Exception as e:
+        app.logger.error(f"Error generating recommendation: {str(e)}")
+        return None
+
+# Check for specific stock recommendation requests
+def is_recommendation_request(query):
+    query = query.lower()
+    recommendation_phrases = [
+        'should i buy', 'worth buying', 'good investment', 'invest in', 
+        'recommend', 'good stock', 'buy or sell', 'good time to buy',
+        'analysis', 'evaluate', 'assessment', 'outlook'
+    ]
+    
+    for phrase in recommendation_phrases:
+        if phrase in query:
+            return True
+            
+    return False
+
+# Extract stock symbol from recommendation request
+def extract_symbol_from_recommendation(query):
+    query = query.lower()
+    
+    patterns = [
+        r'should i buy ([a-zA-Z0-9\.\-_]+)',
+        r'is ([a-zA-Z0-9\.\-_]+) (?:a good|worth) (?:investment|buying)',
+        r'(?:recommend|thoughts on|analysis of|evaluate) ([a-zA-Z0-9\.\-_]+)',
+        r'buy or sell ([a-zA-Z0-9\.\-_]+)'
+    ]
+    
+    for pattern in patterns:
+        match = re.search(pattern, query)
+        if match:
+            return match.group(1).upper()
+            
+    # If no direct match, try to find any stock-like symbols in the text
+    words = query.split()
+    for word in words:
+        # Look for typical stock formats (.NS suffix, all caps, etc)
+        if ('.' in word or word.isupper()) and len(word) >= 2 and len(word) <= 15:
+            return word.upper()
+    
+    return None
+
+# Function to check for stock information in the query
+def check_for_stock_info(query):
+    query = query.lower()
+    
+    # Check if this is a recommendation request
+    want_recommendation = is_recommendation_request(query)
+    
+    # Define common patterns for stock price queries
+    price_patterns = [
+        r'(?:price|value|worth|stock|how (?:much|is)|what\'s|whats|what is).+?([a-zA-Z0-9&\^\._ ]+)(?:\s|$|stock|price|\?)',
+        r'(?:tell|information|info|details|data).+?(?:about|on|for) ([a-zA-Z0-9&\^\._ ]+)(?:\s|$|\?)',
+        r'(^[a-zA-Z0-9]+$)',  # Single word that might be a stock symbol
+        r'search (?:for )?([a-zA-Z0-9&\^\._ ]+)'  # Direct search request
+    ]
+    
+    # Add recommendation patterns if this is a recommendation request
+    if want_recommendation:
+        price_patterns.extend([
+            r'(?:should i (?:buy|invest in|sell)|recommend) ([a-zA-Z0-9&\^\._ ]+)',
+            r'(?:is|think about) ([a-zA-Z0-9&\^\._ ]+) (?:a good investment|worth buying|good stock)'
+        ])
+    
+    # Try to extract potential stock symbols
+    potential_symbols = []
+    
+    # Check all patterns
+    for pattern in price_patterns:
+        matches = re.findall(pattern, query)
+        if matches:
+            for match in matches:
+                if isinstance(match, tuple):
+                    for group in match:
+                        if group and len(group) > 0:
+                            potential_symbols.append(group)
+                else:
+                    if match and len(match) > 0:
+                        potential_symbols.append(match)
+    
+    # Extract any potential stock symbols (words that look like tickers)
+    words = re.findall(r'\b[A-Za-z0-9\.]+\b', query)
+    for word in words:
+        if (len(word) >= 2 and len(word) <= 10) or '.' in word:
+            potential_symbols.append(word)
+    
+    # Common stock mapping for well-known companies
+    stock_mapping = {
+        "apple": "AAPL",
+        "microsoft": "MSFT", 
+        "google": "GOOGL",
+        "alphabet": "GOOGL",
+        "amazon": "AMZN",
+        "tesla": "TSLA",
+        "meta": "META", 
+        "facebook": "META",
+        "netflix": "NFLX",
+        "nvidia": "NVDA",
+        "hdfc bank": "HDFCBANK.NS",
+        "reliance": "RELIANCE.NS",
+        "tata": "TCS.NS",
+        "infosys": "INFY.NS",
+        "state bank": "SBIN.NS",
+        "sbi": "SBIN.NS",
+        "s&p": "^GSPC",
+        "s&p 500": "^GSPC",
+        "dow": "^DJI",
+        "dow jones": "^DJI",
+        "nasdaq": "^IXIC",
+        "nifty": "^NSEI",
+        "nifty 50": "^NSEI",
+        "sensex": "^BSESN"
+    }
+    
+    # Remove duplicates and sort by length (shorter symbols are more likely to be valid tickers)
+    potential_symbols = list(set(potential_symbols))
+    potential_symbols.sort(key=len)
+    
+    app.logger.info(f"Potential stock symbols extracted: {potential_symbols}")
+    
+    # Clean up symbols and try them
+    for symbol in potential_symbols:
+        # Clean the symbol
+        clean_symbol = symbol.strip().upper()
+        clean_symbol = re.sub(r'(STOCK|PRICE|\?|OF|THE|FOR)$', '', clean_symbol).strip()
+        
+        # Skip very common words that might be extracted but aren't likely to be stocks
+        if clean_symbol.lower() in ['a', 'the', 'and', 'or', 'of', 'to', 'for', 'in', 'on', 'by', 'all', 'any']:
+            continue
+            
+        # Check if this matches known mappings
+        symbol_key = clean_symbol.lower()
+        if symbol_key in stock_mapping:
+            ticker_to_try = stock_mapping[symbol_key]
+            app.logger.info(f"Found mapping for {clean_symbol}: {ticker_to_try}")
+            
+            # Try to get stock info with recommendation if requested
+            stock_info = get_specific_stock_info(ticker_to_try, include_recommendation=want_recommendation)
+            if stock_info:
+                return stock_info
+        
+        # Try different exchange variations
+        exchange_variations = [
+            '',         # Raw symbol
+            '.NS',      # India NSE
+            '.BO',      # India BSE
+            '.L',       # London
+            '.PA',      # Euronext Paris
+            '.F',       # Frankfurt
+            '.TO',      # Toronto
+            '.AX',      # Australian Securities Exchange
+            '.SA',      # Sao Paulo Stock Exchange
+            '.T',       # Tokyo Stock Exchange
+            '.HK',      # Hong Kong Stock Exchange
+            '.SZ',      # Shenzhen Stock Exchange
+            '.SS',      # Shanghai Stock Exchange
+            '.SW',      # Swiss Exchange
+            '-USD',     # Cryptocurrency format
+            '.SI',      # Singapore Exchange
+            '.JK',      # Jakarta Stock Exchange
+            '.KS',      # Korea Stock Exchange
+            '.KL',      # Kuala Lumpur Stock Exchange
+            '.V',       # TSX Venture Exchange (Canada)
+            '.MX',      # Mexico Stock Exchange
+            '.ST',      # Stockholm Stock Exchange
+            '.CO',      # Copenhagen Stock Exchange
+            '.OL',      # Oslo Stock Exchange
+            '.NZ',      # New Zealand Stock Exchange
+            '.BR',      # Brussels Stock Exchange
+            '.MC',      # Madrid Stock Exchange
+            '.AT',      # Athens Stock Exchange
+            '.VI',      # Vienna Stock Exchange
+        ]
+        
+        # Index prefix for major indices
+        if len(clean_symbol) <= 5:
+            exchange_variations.append('^' + clean_symbol)  # Index format like ^GSPC
+        
+        # Try the raw symbol first
+        if '.' not in clean_symbol:
+            stock_info = get_specific_stock_info(clean_symbol, include_recommendation=want_recommendation)
+            if stock_info:
+                return stock_info
+                
+        # Try various exchanges - only if the symbol doesn't already have a suffix
+        if '.' not in clean_symbol and '-' not in clean_symbol:
+            for exchange in exchange_variations:
+                variation = clean_symbol + exchange
+                app.logger.info(f"Trying stock symbol with exchange: {variation}")
+                stock_info = get_specific_stock_info(variation, include_recommendation=want_recommendation)
+                if stock_info:
+                    return stock_info
+                    
+        # If the symbol already has a suffix (like .NS) try it directly
+        elif '.' in clean_symbol:
+            stock_info = get_specific_stock_info(clean_symbol, include_recommendation=want_recommendation)
+            if stock_info:
+                return stock_info
+                
+        # Try removing spaces (for multi-word names)
+        if ' ' in clean_symbol:
+            no_spaces = clean_symbol.replace(' ', '')
+            stock_info = get_specific_stock_info(no_spaces, include_recommendation=want_recommendation)
+            if stock_info:
+                return stock_info
+                
+            # Try with exchanges
+            for exchange in exchange_variations:
+                if exchange:  # Skip empty exchange
+                    variation = no_spaces + exchange
+                    app.logger.info(f"Trying no-space symbol with exchange: {variation}")
+                    stock_info = get_specific_stock_info(variation, include_recommendation=want_recommendation)
+                    if stock_info:
+                        return stock_info
+    
+    return None
 
 # Endpoint for direct stock search
 @app.route('/search-stock', methods=['POST'])
@@ -380,7 +574,18 @@ def generate_local_response(query):
 def get_openai_response(user_message):
     global openai_api_available
     
-    # Check if this might be a direct stock query first
+    # First, check if this is a recommendation request
+    if is_recommendation_request(user_message):
+        symbol = extract_symbol_from_recommendation(user_message)
+        if symbol:
+            app.logger.info(f"Identified recommendation request for symbol: {symbol}")
+            # Get stock info with recommendation
+            stock_info = get_specific_stock_info(symbol, include_recommendation=True)
+            if stock_info:
+                return stock_info
+    
+    # If not a recommendation or we couldn't get a recommendation,
+    # proceed with general stock info checking
     stock_info = check_for_stock_info(user_message)
     if stock_info:
         app.logger.info("Found direct stock information, returning without calling OpenAI")
@@ -591,6 +796,25 @@ def status_page():
     </html>
     """
     return html
+
+# Add a new endpoint for direct stock recommendations
+@app.route('/recommend-stock', methods=['POST'])
+def recommend_stock():
+    try:
+        symbol = request.json.get('symbol', '').strip()
+        if not symbol:
+            return jsonify({"error": "Please provide a stock symbol"}), 400
+            
+        # Try to get recommendation
+        stock_info = get_specific_stock_info(symbol, include_recommendation=True)
+        if stock_info:
+            return jsonify({"result": stock_info})
+        else:
+            # Try common variations as you do in search-stock
+            return jsonify({"error": f"Could not find stock information for '{symbol}'. Try adding an exchange extension (like .NS for Indian stocks) or check if the symbol is correct."}), 404
+    except Exception as e:
+        app.logger.error(f"Error in stock recommendation: {str(e)}")
+        return jsonify({"error": "An error occurred while analyzing the stock"}), 500
 
 # Run the app
 if __name__ == '__main__':
