@@ -168,16 +168,38 @@
         }
         
         // Add bot message to chat
-        function addBotMessage(message) {
+        function addBotMessage(message, isError = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message bot';
-            messageDiv.innerHTML = `
-                <div class="message-content">
-                    <p>${message}</p>
-                </div>
-            `;
+            
+            // Format the message text: Replace line breaks with <br> tags
+            const formattedMessage = message.replace(/\n/g, '<br>');
+            
+            let messageHTML = `<div class="message-content">`;
+            
+            if (isError) {
+                messageHTML += `
+                    <p>${formattedMessage}</p>
+                    <p><button class="retry-button" onclick="retryLastMessage()">Retry</button></p>
+                `;
+            } else {
+                messageHTML += `<p>${formattedMessage}</p>`;
+            }
+            
+            messageHTML += `</div>`;
+            messageDiv.innerHTML = messageHTML;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        // Store the last message for retry functionality
+        let lastUserMessage = '';
+        
+        // Retry the last message
+        function retryLastMessage() {
+            if (lastUserMessage) {
+                sendMessage(lastUserMessage);
+            }
         }
         
         // Show typing indicator
@@ -194,6 +216,7 @@
         // Send message to API and get response
         async function sendMessage(message) {
             showTypingIndicator();
+            lastUserMessage = message; // Store for retry
             
             try {
                 const response = await fetch('/chat', {
@@ -204,13 +227,18 @@
                     body: JSON.stringify({ message })
                 });
                 
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server error (${response.status}): ${errorText}`);
+                }
+                
                 const data = await response.json();
                 hideTypingIndicator();
                 addBotMessage(data);
             } catch (error) {
                 console.error('Error sending message:', error);
                 hideTypingIndicator();
-                addBotMessage('Sorry, I encountered an error. Please try again later.');
+                addBotMessage(`Sorry, I encountered an error. Please try again later or click retry below. (${error.message})`, true);
             }
         }
         
