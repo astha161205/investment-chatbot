@@ -7,6 +7,213 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Inline styles to override defaults */
+        body {
+            background-color: #f0f4ff;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .home-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .home-header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(31, 41, 55, 0.4);
+            z-index: 10;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+        }
+        
+        .logo i {
+            font-size: 2.5rem;
+            margin-right: 15px;
+            color: #ffffff;
+            /* text-shadow: 0 2px 4px rgb(255, 255, 255); */
+        }
+        
+        .logo h1 {
+            font-size: 2.5rem;
+            margin: 0;
+            font-weight: 700;
+            color: #ffffff;
+            text-shadow: none;
+            letter-spacing: 0.5px;
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            opacity: 0.9;
+            margin: 5px 0 0;
+            color: #ffffff;
+            text-shadow: none;
+            text-align: center;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 25px;
+            max-width: 1100px;
+            margin: 0 auto 40px;
+        }
+        
+        .feature-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            text-align: center;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .feature-icon {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+        }
+        
+        .feature-card:nth-child(1) .feature-icon {
+            background: rgba(106, 109, 255, 0.15);
+            color: #6a6dff;
+        }
+        
+        .feature-card:nth-child(2) .feature-icon {
+            background: rgba(26, 188, 156, 0.15);
+            color: #1abc9c;
+        }
+        
+        .feature-card:nth-child(3) .feature-icon {
+            background: rgba(241, 196, 15, 0.15);
+            color: #f1c40f;
+        }
+        
+        .feature-card:nth-child(4) .feature-icon {
+            background: rgba(155, 89, 182, 0.15);
+            color: #9b59b6;
+        }
+        
+        .feature-icon i {
+            font-size: 1.8rem;
+        }
+        
+        .feature-card h3 {
+            font-size: 1.3rem;
+            margin: 0 0 12px;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .feature-card p {
+            color: #7f8c8d;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            margin: 0;
+            flex-grow: 1;
+        }
+        
+        .cta-container {
+            text-align: center;
+            margin: 40px 0;
+        }
+        
+        .cta-button {
+            display: inline-flex;
+            align-items: center;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #6a6dff 0%, #5a5bd6 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 30px;
+            font-weight: 500;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(90, 91, 214, 0.3);
+        }
+        
+        .cta-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(90, 91, 214, 0.4);
+        }
+        
+        .cta-button span {
+            margin-right: 10px;
+        }
+        
+        .home-footer {
+            text-align: center;
+            color: #7f8c8d;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .footer-links {
+            margin-top: 10px;
+        }
+        
+        .footer-links a {
+            color: #5a5bd6;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 0.9rem;
+        }
+        
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        /* Make sure the content is centered */
+        .home-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .features-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                gap: 20px;
+            }
+            
+            .logo h1 {
+                font-size: 2rem;
+            }
+            
+            .feature-icon {
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
 </head>
 <body class="home-page">
     <div class="home-container">

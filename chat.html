@@ -7,6 +7,480 @@
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Inline styles to override defaults */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #f0f4ff;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            color: white;
+            padding: 15px 20px;
+            box-shadow: 0 4px 15px rgba(31, 41, 55, 0.4);
+            z-index: 100;
+        }
+        
+        header h1 {
+            margin: 5px 0;
+            font-weight: 700;
+            color: #ffffff;
+            font-size: 2rem;
+        }
+        
+        header p {
+            margin: 5px 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+        
+        .back-button {
+            color: white;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            width: fit-content;
+            margin-bottom: 10px;
+        }
+        
+        .back-button i {
+            margin-right: 5px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .sidebar {
+            width: 30%;
+            background-color: #ffffff;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .market-overview, .news-section {
+            padding: 15px;
+            flex: 1 0 50%;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .market-overview {
+            border-bottom: 1px solid #e1e4e8;
+        }
+        
+        .market-overview h2, .news-section h2 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+        
+        .market-cards {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 5px;
+        }
+        
+        .market-card {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: relative;
+            border: 1px solid #e1e4e8;
+        }
+        
+        .market-card i {
+            font-size: 1.2rem;
+            color: #6a6dff;
+            margin-right: 12px;
+        }
+        
+        .market-card h3 {
+            font-size: 0.95rem;
+            margin: 0 0 5px;
+        }
+        
+        .market-card .price {
+            font-weight: 600;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .market-card .change {
+            font-size: 0.8rem;
+            margin: 2px 0 0;
+        }
+        
+        .market-card .change.positive {
+            color: #2ecc71;
+        }
+        
+        .market-card .change.negative {
+            color: #e74c3c;
+        }
+        
+        .news-container {
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .news-item {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border: 1px solid #e1e4e8;
+        }
+        
+        .news-item h3 {
+            font-size: 0.95rem;
+            margin: 8px 0;
+        }
+        
+        .news-item p {
+            font-size: 0.85rem;
+            color: #5a6268;
+            margin: 5px 0 8px;
+        }
+        
+        .news-header {
+            display: flex;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+        
+        .news-item .sentiment {
+            margin-right: 8px;
+        }
+        
+        .news-item .source {
+            font-weight: 500;
+        }
+        
+        .news-item .date {
+            margin-left: auto;
+        }
+        
+        .news-item .read-more {
+            display: inline-block;
+            font-size: 0.8rem;
+            color: #6a6dff;
+            text-decoration: none;
+        }
+        
+        .news-item.bullish .sentiment {
+            color: #2ecc71;
+        }
+        
+        .news-item.bearish .sentiment {
+            color: #e74c3c;
+        }
+        
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid #e1e4e8;
+        }
+        
+        .chat-header {
+            padding: 15px;
+            border-bottom: 1px solid #e1e4e8;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #fff;
+        }
+        
+        .chat-header h2 {
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin: 0;
+        }
+        
+        .chat-controls {
+            display: flex;
+        }
+        
+        .control-btn {
+            background: none;
+            border: none;
+            font-size: 1rem;
+            color: #6c757d;
+            cursor: pointer;
+            padding: 5px;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-color: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .message.user {
+            align-items: flex-end;
+        }
+        
+        .message.bot {
+            align-items: flex-start;
+        }
+        
+        .message-content {
+            max-width: 80%;
+            padding: 12px 15px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            word-break: break-word;
+        }
+        
+        .message.user .message-content {
+            background-color: #6a6dff;
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+        
+        .message.bot .message-content {
+            background-color: white;
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .message-content p {
+            margin: 0 0 10px;
+        }
+        
+        .message-content p:last-child {
+            margin-bottom: 0;
+        }
+        
+        .message-content ul {
+            margin: 5px 0;
+            padding-left: 25px;
+        }
+        
+        .message-content li {
+            margin-bottom: 2px;
+        }
+        
+        .typing-indicator {
+            display: none;
+            padding: 15px;
+            align-items: center;
+        }
+        
+        .typing-indicator span {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            display: inline-block;
+            margin-right: 5px;
+            animation: typing 1s infinite ease-in-out;
+        }
+        
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.15s;
+        }
+        
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.3s;
+            margin-right: 0;
+        }
+        
+        @keyframes typing {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0); }
+        }
+        
+        .chat-input-container {
+            padding: 15px;
+            display: flex;
+            background-color: #fff;
+            border-top: 1px solid #e1e4e8;
+        }
+        
+        .input-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            background-color: #f5f5f5;
+            border-radius: 25px;
+            padding: 10px 15px;
+            margin-right: 10px;
+        }
+        
+        .input-wrapper i {
+            color: #6c757d;
+            margin-right: 8px;
+        }
+        
+        #userInput {
+            flex: 1;
+            border: none;
+            background: none;
+            outline: none;
+            font-size: 0.95rem;
+        }
+        
+        #sendButton {
+            background: linear-gradient(135deg, #6a6dff 0%, #5a5bd6 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+        
+        #sendButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(106, 109, 255, 0.3);
+        }
+        
+        #sendButton i {
+            margin-right: 5px;
+        }
+        
+        .loading-spinner, .news-loading i {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(0,0,0,0.1);
+            border-radius: 50%;
+            border-top-color: #6a6dff;
+            animation: spin 0.8s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .market-card.loading .loading-spinner {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .news-loading, .news-error, .news-empty {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+        
+        .news-loading i, .news-error i {
+            margin-bottom: 8px;
+            font-size: 1.2rem;
+        }
+        
+        .market-card.error {
+            border-color: #ffcccc;
+        }
+        
+        .retry-button {
+            background: #f0f2f5;
+            border: 1px solid #dce0e6;
+            border-radius: 15px;
+            padding: 5px 15px;
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .retry-button:hover {
+            background: #e4e7eb;
+        }
+        
+        @media (max-width: 900px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                height: 180px;
+            }
+            
+            .market-overview, .news-section {
+                width: 50%;
+                flex: 1;
+                border-bottom: none;
+            }
+            
+            .market-overview {
+                border-right: 1px solid #e1e4e8;
+            }
+            
+            .message-content {
+                max-width: 90%;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .sidebar {
+                flex-direction: column;
+                height: 300px;
+            }
+            
+            .market-overview, .news-section {
+                width: 100%;
+                height: 50%;
+            }
+            
+            .market-overview {
+                border-right: none;
+                border-bottom: 1px solid #e1e4e8;
+            }
+            
+            .chat-input-container {
+                flex-direction: column;
+            }
+            
+            .input-wrapper {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -20,10 +494,22 @@
         </header>
         
         <div class="main-content">
-            <div class="market-overview">
-                <h2>Market Overview</h2>
-                <div class="market-cards" id="marketCards">
-                    <!-- Market cards will be loaded here -->
+            <div class="sidebar">
+                <div class="market-overview">
+                    <h2>Market Overview</h2>
+                    <div class="market-cards" id="marketCards">
+                        <!-- Market cards will be loaded here -->
+                    </div>
+                </div>
+                
+                <div class="news-section">
+                    <h2>Latest Market News</h2>
+                    <div class="news-container" id="newsContainer">
+                        <div class="news-loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Loading market news...</p>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -46,6 +532,7 @@
                                 <li>Investment strategies and advice</li>
                                 <li>Market trends and analysis</li>
                                 <li>Company performance and financial data</li>
+                                <li>Latest news for any stock or market</li>
                             </ul>
                         </div>
                     </div>
@@ -78,6 +565,7 @@
         const typingIndicator = document.getElementById('typingIndicator');
         const clearChatButton = document.getElementById('clearChat');
         const marketCards = document.getElementById('marketCards');
+        const newsContainer = document.getElementById('newsContainer');
         
         // Example stock symbols for Indian and global markets
         const stocks = [
@@ -112,6 +600,74 @@
                 // Fetch stock data
                 fetchStockData(stock.symbol, card);
             });
+            
+            // Load news after market cards
+            loadMarketNews();
+        }
+        
+        // Load market news
+        function loadMarketNews() {
+            newsContainer.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading market news...</p></div>';
+            
+            // Fetch news for market indices
+            fetchStockNews('SPY', 5)  // S&P 500 ETF as a general market indicator
+                .then(news => {
+                    displayNews(news);
+                })
+                .catch(error => {
+                    console.error('Error loading market news:', error);
+                    newsContainer.innerHTML = '<div class="news-error"><i class="fas fa-exclamation-circle"></i><p>Failed to load market news</p></div>';
+                });
+        }
+        
+        // Fetch news for a specific stock
+        async function fetchStockNews(symbol, limit = 3) {
+            try {
+                const response = await fetch(`/stock-news?symbol=${symbol}&limit=${limit}`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch news (${response.status})`);
+                }
+                const data = await response.json();
+                return data.news || [];
+            } catch (error) {
+                console.error(`Error fetching news for ${symbol}:`, error);
+                throw error;
+            }
+        }
+        
+        // Display news in the news container
+        function displayNews(newsItems) {
+            if (!newsItems || newsItems.length === 0) {
+                newsContainer.innerHTML = '<div class="news-empty"><p>No news available at this time</p></div>';
+                return;
+            }
+            
+            newsContainer.innerHTML = '';
+            
+            newsItems.forEach(item => {
+                const sentimentClass = 
+                    item.sentiment === 'bullish' ? 'bullish' : 
+                    item.sentiment === 'bearish' ? 'bearish' : 'neutral';
+                    
+                const sentimentIcon = 
+                    item.sentiment === 'bullish' ? '<i class="fas fa-arrow-up"></i>' : 
+                    item.sentiment === 'bearish' ? '<i class="fas fa-arrow-down"></i>' : 
+                    '<i class="fas fa-minus"></i>';
+                
+                const newsItem = document.createElement('div');
+                newsItem.className = `news-item ${sentimentClass}`;
+                newsItem.innerHTML = `
+                    <div class="news-header">
+                        <span class="sentiment">${sentimentIcon}</span>
+                        <span class="source">${item.source}</span>
+                        <span class="date">${item.published_date}</span>
+                    </div>
+                    <h3>${item.title}</h3>
+                    <p>${item.summary.substring(0, 120)}${item.summary.length > 120 ? '...' : ''}</p>
+                    <a href="${item.url}" target="_blank" class="read-more">Read More</a>
+                `;
+                newsContainer.appendChild(newsItem);
+            });
         }
         
         // Fetch stock data from our API
@@ -144,14 +700,51 @@
                     }
                     
                     card.classList.remove('loading');
+                    // Remove the loading spinner
+                    const spinner = card.querySelector('.loading-spinner');
+                    if (spinner) {
+                        spinner.remove();
+                    }
+                    
+                    // Make the card clickable to show news for this stock
+                    card.style.cursor = 'pointer';
+                    card.addEventListener('click', () => {
+                        showStockNews(symbol, card.querySelector('h3').textContent);
+                    });
                 }
             } catch (error) {
                 console.error(`Error fetching data for ${symbol}:`, error);
                 card.classList.remove('loading');
                 card.classList.add('error');
+                // Remove the loading spinner on error
+                const spinner = card.querySelector('.loading-spinner');
+                if (spinner) {
+                    spinner.remove();
+                }
+                
                 card.querySelector('.price').textContent = 'Error';
                 card.querySelector('.change').textContent = 'Failed to load data';
             }
+        }
+        
+        // Show news for a specific stock when clicked
+        function showStockNews(symbol, stockName) {
+            // Update news section title
+            const newsTitle = document.querySelector('.news-section h2');
+            newsTitle.textContent = `${stockName} News`;
+            
+            // Show loading indicator
+            newsContainer.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading news...</p></div>';
+            
+            // Fetch and display news
+            fetchStockNews(symbol, 5)
+                .then(news => {
+                    displayNews(news);
+                })
+                .catch(error => {
+                    console.error(`Error loading news for ${symbol}:`, error);
+                    newsContainer.innerHTML = '<div class="news-error"><i class="fas fa-exclamation-circle"></i><p>Failed to load news</p></div>';
+                });
         }
         
         // Add user message to chat
@@ -190,6 +783,29 @@
             messageDiv.innerHTML = messageHTML;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Check if the message contains a stock symbol, extract it for news loading
+            if (!isError) {
+                extractStockSymbolAndLoadNews(message);
+            }
+        }
+        
+        // Extract stock symbol from bot message and load news if found
+        function extractStockSymbolAndLoadNews(message) {
+            // Look for patterns like "Symbol: XYZ" or "(XYZ)" or common formats
+            const symbolRegex = /\(([A-Za-z0-9\.\^-]{1,10})\)/;
+            const match = message.match(symbolRegex);
+            
+            if (match && match[1]) {
+                const symbol = match[1];
+                // Look for a stock name pattern before the symbol
+                const nameRegex = new RegExp(`([A-Za-z\\s.,&]+)\\s*\\(${symbol}\\)`);
+                const nameMatch = message.match(nameRegex);
+                const stockName = nameMatch ? nameMatch[1].trim() : symbol;
+                
+                // Update news section title and load news
+                showStockNews(symbol, stockName);
+            }
         }
         
         // Store the last message for retry functionality
