@@ -17,14 +17,8 @@ app = Flask(__name__)
 # Set your OpenAI API key
 api_key = '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'
 
-# Alpha Vantage API key for news
-alpha_vantage_api_key = 'SY9Z5OP28B21JBY1'
-
-# Configure OpenAI API base URL - this is important for project-based keys
-openai_api_base = "https://api.openai.com/v1"
-
 # Track API availability
-openai_api_available = True
+openai_api_available = False # Set to False since OpenAI is currently mocked
 
 # Function to fetch stock data
 def get_stock_data(ticker):
@@ -63,64 +57,61 @@ def stock():
     
     return jsonify(result)
 
-# Function to get news for a stock
-def get_stock_news(symbol, topics=None, limit=3):
+# Function to get news for a stock using Yahoo Finance
+def get_stock_news(symbol, limit=3):
     try:
-        # If symbol contains an exchange suffix, extract the base ticker
-        base_symbol = symbol.split('.')[0] if '.' in symbol else symbol
+        app.logger.info(f"Fetching news for symbol: {symbol} using yfinance")
+        stock = yf.Ticker(symbol)
+        news = stock.news
         
-        # If it's an index (starts with ^), remove the ^ for news search
-        if base_symbol.startswith('^'):
-            base_symbol = base_symbol[1:]
-            
-        # Prepare the API URL
-        url = f"https://www.alphavantage.co/query?function=NEWS_SENTIMENT"
+        app.logger.info(f"Raw news data received for {symbol}: {news}") # Log raw data
         
-        # If we have a symbol, add it to the query
-        if symbol:
-            url += f"&tickers={base_symbol}"
-            
-        # If there are specific topics, add them
-        if topics:
-            url += f"&topics={topics}"
-            
-        # Add limit and API key
-        url += f"&limit={limit}&apikey={alpha_vantage_api_key}"
-        
-        # Make the request
-        response = requests.get(url, timeout=10)
-        data = response.json()
-        
-        # Check if we got valid data
-        if 'feed' not in data or not data['feed']:
+        if not news:
+            app.logger.info(f"No news found for {symbol} via yfinance.")
             return None
             
         # Process the news items
         news_items = []
-        for item in data['feed'][:limit]:  # Limit to the requested number of items
-            # Format the date
-            published_date = None
-            if 'time_published' in item:
-                try:
-                    # Format: 20230821T083000
-                    time_str = item['time_published']
-                    dt = datetime.strptime(time_str, "%Y%m%dT%H%M%S")
-                    published_date = dt.strftime("%b %d, %Y")
-                except:
-                    published_date = item.get('time_published', 'Unknown date')
+        app.logger.info(f"Processing {len(news)} news items for {symbol}...")
+        for i, item in enumerate(news[:limit]):  # Limit to the requested number of items
+            app.logger.info(f"Processing item {i}: {item}") # Log each item
             
+            # Format the date (provider_publish_time is usually a Unix timestamp)
+            published_date = "Unknown date"
+            if 'providerPublishTime' in item and item['providerPublishTime']:
+                try:
+                    timestamp = item['providerPublishTime']
+                    dt = datetime.fromtimestamp(timestamp)
+                    published_date = dt.strftime("%b %d, %Y")
+                except Exception as date_err:
+                    app.logger.warning(f"Could not parse news date for {symbol}: {date_err} (Timestamp: {item.get('providerPublishTime')})")
+            else:
+                app.logger.warning(f"No providerPublishTime found for item {i} of {symbol}")
+
+            # Check for essential fields
+            title = item.get('title', 'No title available')
+            link = item.get('link', '#')
+            publisher = item.get('publisher', 'Unknown source')
+            summary = item.get('summary', 'No summary available') # yfinance might not have summary
+
+            if title == 'No title available' or link == '#':
+                app.logger.warning(f"Skipping news item {i} for {symbol} due to missing title or link.")
+                continue
+            
+            # yfinance doesn't provide sentiment, so we'll set it to neutral
             news_items.append({
-                'title': item.get('title', 'No title available'),
-                'summary': item.get('summary', 'No summary available'),
-                'url': item.get('url', '#'),
-                'source': item.get('source', 'Unknown source'),
+                'title': title,
+                'summary': summary,
+                'url': link,
+                'source': publisher,
                 'published_date': published_date,
-                'sentiment': item.get('overall_sentiment_label', 'neutral')
+                'sentiment': 'neutral' # Set sentiment to neutral as yfinance doesn't provide it
             })
             
+        app.logger.info(f"Finished processing news for {symbol}. Returning {len(news_items)} items.")
         return news_items
     except Exception as e:
-        app.logger.error(f"Error fetching news for {symbol}: {str(e)}")
+        app.logger.error(f"Error fetching yfinance news for {symbol}: {str(e)}", exc_info=True) # Log traceback
         return None
 
 # Function to get information for a specific stock symbol

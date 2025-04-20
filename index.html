@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,25 +8,103 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* Theme variables */
+        :root {
+            /* Light theme (default) */
+            --bg-color: #f0f4ff;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --text-secondary: #7f8c8d;
+            --header-bg: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+            --header-text: #ffffff;
+            --border-color: rgba(0, 0, 0, 0.05);
+            --card-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            --primary-color: #6a6dff;
+            --secondary-color: #5a5bd6;
+            --feature-title: #2c3e50;
+            --feature-text: #7f8c8d;
+            --icon-1-bg: rgba(106, 109, 255, 0.15);
+            --icon-1-color: #6a6dff;
+            --icon-2-bg: rgba(26, 188, 156, 0.15);
+            --icon-2-color: #1abc9c;
+            --icon-3-bg: rgba(241, 196, 15, 0.15);
+            --icon-3-color: #f1c40f;
+            --icon-4-bg: rgba(155, 89, 182, 0.15);
+            --icon-4-color: #9b59b6;
+        }
+        
+        /* Dark theme */
+        html[data-theme='dark'] {
+            --bg-color: #1a1a2e;
+            --card-bg: #252541;
+            --text-color: #e1e1e1;
+            --text-secondary: #a2a5b9;
+            --header-bg: linear-gradient(135deg, #16213e 0%, #0f172a 100%);
+            --header-text: #ffffff;
+            --border-color: rgba(255, 255, 255, 0.05);
+            --card-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            --primary-color: #818aff;
+            --secondary-color: #6a6dff;
+            --feature-title: #e1e1e1;
+            --feature-text: #a2a5b9;
+            --icon-1-bg: rgba(106, 109, 255, 0.2);
+            --icon-1-color: #818aff;
+            --icon-2-bg: rgba(26, 188, 156, 0.2);
+            --icon-2-color: #2ecc71;
+            --icon-3-bg: rgba(241, 196, 15, 0.2);
+            --icon-3-color: #f1c40f;
+            --icon-4-bg: rgba(155, 89, 182, 0.2);
+            --icon-4-color: #bb8fce;
+            --card-hover-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Theme toggle styles */
+        .theme-toggle {
+            background: none;
+            border: none;
+            color: var(--header-text);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 5px;
+            transition: transform 0.3s ease;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+        }
+        
+        .theme-toggle:hover {
+            transform: rotate(30deg);
+        }
+        
         /* Inline styles to override defaults */
-        body {
-            background-color: #f0f4ff;
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             font-family: 'Roboto', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         .home-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
+            background-color: transparent; /* Ensure container doesn't block body background */
         }
         
         .home-header {
             text-align: center;
-            padding: 20px;
-            background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
-            color: white;
+            padding: 40px 20px;
+            background: var(--header-bg);
+            color: var(--header-text);
             box-shadow: 0 4px 15px rgba(31, 41, 55, 0.4);
-            z-index: 10;
+            z-index: 5;
+            position: relative;
+            border-radius: 15px;
+            margin-bottom: 40px;
         }
         
         .logo {
@@ -39,7 +117,7 @@
         .logo i {
             font-size: 2.5rem;
             margin-right: 15px;
-            color: #ffffff;
+            color: var(--header-text);
             /* text-shadow: 0 2px 4px rgb(255, 255, 255); */
         }
         
@@ -47,7 +125,7 @@
             font-size: 2.5rem;
             margin: 0;
             font-weight: 700;
-            color: #ffffff;
+            color: var(--header-text);
             text-shadow: none;
             letter-spacing: 0.5px;
         }
@@ -56,7 +134,7 @@
             font-size: 1.2rem;
             opacity: 0.9;
             margin: 5px 0 0;
-            color: #ffffff;
+            color: var(--header-text);
             text-shadow: none;
             text-align: center;
             max-width: 500px;
@@ -66,74 +144,77 @@
         
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 25px;
-            max-width: 1100px;
-            margin: 0 auto 40px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            max-width: 1000px;
+            margin: 30px auto 40px;
+            justify-items: center;
         }
         
         .feature-card {
-            background: white;
+            background: var(--card-bg);
             border-radius: 15px;
-            padding: 25px;
+            padding: 20px;
             transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--card-shadow);
             text-align: center;
             height: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
+            border: none;
+            width: 100%;
         }
         
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--card-hover-shadow, 0 10px 25px rgba(0, 0, 0, 0.1));
         }
         
         .feature-icon {
-            width: 70px;
-            height: 70px;
+            width: 60px;
+            height: 60px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 20px;
+            margin: 0 auto 15px;
         }
         
         .feature-card:nth-child(1) .feature-icon {
-            background: rgba(106, 109, 255, 0.15);
-            color: #6a6dff;
+            background: var(--icon-1-bg);
+            color: var(--icon-1-color);
         }
         
         .feature-card:nth-child(2) .feature-icon {
-            background: rgba(26, 188, 156, 0.15);
-            color: #1abc9c;
+            background: var(--icon-2-bg);
+            color: var(--icon-2-color);
         }
         
         .feature-card:nth-child(3) .feature-icon {
-            background: rgba(241, 196, 15, 0.15);
-            color: #f1c40f;
+            background: var(--icon-3-bg);
+            color: var(--icon-3-color);
         }
         
         .feature-card:nth-child(4) .feature-icon {
-            background: rgba(155, 89, 182, 0.15);
-            color: #9b59b6;
+            background: var(--icon-4-bg);
+            color: var(--icon-4-color);
         }
         
         .feature-icon i {
-            font-size: 1.8rem;
+            font-size: 1.5rem;
         }
         
         .feature-card h3 {
-            font-size: 1.3rem;
-            margin: 0 0 12px;
-            color: #2c3e50;
+            font-size: 1.1rem;
+            margin: 0 0 10px;
+            color: var(--feature-title);
             font-weight: 600;
         }
         
         .feature-card p {
-            color: #7f8c8d;
-            font-size: 0.95rem;
+            color: var(--feature-text);
+            font-size: 0.9rem;
             line-height: 1.5;
             margin: 0;
             flex-grow: 1;
@@ -141,19 +222,19 @@
         
         .cta-container {
             text-align: center;
-            margin: 40px 0;
+            margin: 30px 0;
         }
         
         .cta-button {
             display: inline-flex;
             align-items: center;
-            padding: 14px 30px;
-            background: linear-gradient(135deg, #6a6dff 0%, #5a5bd6 100%);
+            padding: 12px 25px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
             text-decoration: none;
-            border-radius: 30px;
+            border-radius: 25px;
             font-weight: 500;
-            font-size: 1.1rem;
+            font-size: 1rem;
             transition: all 0.3s ease;
             box-shadow: 0 4px 15px rgba(90, 91, 214, 0.3);
         }
@@ -169,10 +250,10 @@
         
         .home-footer {
             text-align: center;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             margin-top: 40px;
             padding-top: 20px;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            border-top: 1px solid var(--border-color);
         }
         
         .footer-links {
@@ -180,7 +261,7 @@
         }
         
         .footer-links a {
-            color: #5a5bd6;
+            color: var(--primary-color);
             text-decoration: none;
             margin: 0 10px;
             font-size: 0.9rem;
@@ -195,13 +276,15 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            background-color: transparent;
         }
         
         /* Responsive adjustments */
         @media (max-width: 768px) {
             .features-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                gap: 20px;
+                grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                gap: 15px;
+                max-width: 90%;
             }
             
             .logo h1 {
@@ -209,8 +292,36 @@
             }
             
             .feature-icon {
-                width: 60px;
-                height: 60px;
+                width: 50px;
+                height: 50px;
+            }
+            
+            .feature-icon i {
+                font-size: 1.3rem;
+            }
+            
+            .theme-toggle {
+                top: 15px;
+                right: 15px;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .features-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+                gap: 12px;
+            }
+            
+            .feature-card {
+                padding: 15px;
+            }
+            
+            .feature-card h3 {
+                font-size: 1rem;
+            }
+            
+            .feature-card p {
+                font-size: 0.85rem;
             }
         }
     </style>
@@ -218,6 +329,9 @@
 <body class="home-page">
     <div class="home-container">
         <header class="home-header">
+            <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
+                <i class="fas fa-moon"></i>
+            </button>
             <div class="logo">
                 <i class="fas fa-chart-line"></i>
                 <h1>AI Investment Advisor</h1>
@@ -277,5 +391,40 @@
             </div>
         </footer>
     </div>
+    
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('themeToggle');
+        
+        function applyTheme(theme) {
+            // Apply theme to html element
+            document.documentElement.setAttribute('data-theme', theme);
+            
+            // Change icon based on theme
+            const icon = themeToggle.querySelector('i');
+            if (theme === 'dark') {
+                icon.className = 'fas fa-sun';
+            } else {
+                icon.className = 'fas fa-moon';
+            }
+        }
+        
+        themeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            
+            // Apply theme changes
+            applyTheme(newTheme);
+            
+            // Save theme preference to localStorage
+            localStorage.setItem('theme', newTheme);
+        });
+        
+        // Load saved theme preference from localStorage
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme') || 'light'; // Default to light if no theme saved
+            applyTheme(savedTheme);
+        });
+    </script>
 </body>
 </html> 
