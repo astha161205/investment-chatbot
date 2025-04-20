@@ -173,7 +173,7 @@
             width: 25%;
             flex-shrink: 0;
             height: 100vh; /* Full viewport height */
-            max-height: 100vh; /* Ensure it doesn't grow beyond viewport */
+            max-height: 1000vh; /* Ensure it doesn't grow beyond viewport */
             background-color: var(--card-bg);
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
             display: flex;
@@ -187,7 +187,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            overflow-y: visible; /* Allow content to expand */
+            overflow-y: visible;
         }
         
         .market-overview h2 {
@@ -1250,6 +1250,29 @@
         async function sendMessage(message) {
             showTypingIndicator();
             lastUserMessage = message; // Store for retry
+
+            // Check if message is asking for stock recommendations under a price
+            const priceLimitObj = parsePriceLimit(message);
+            if (priceLimitObj !== null) {
+                // Handle stock recommendation locally
+                try {
+                    const recommendedStocks = await getStocksUnderPrice(priceLimitObj);
+                    hideTypingIndicator();
+                    if (recommendedStocks.length === 0) {
+                        addBotMessage(`Sorry, I couldn't find any stocks under ${priceLimitObj.currency}${priceLimitObj.price}.`);
+                    } else {
+                        const stockList = recommendedStocks.map(s => `${s.name} (${s.symbol}) - ${priceLimitObj.currency}${s.price.toFixed(2)}`).join('\n');
+                        const dividendNote = "\n\nNote: Dividend information is not available.";
+                        const riskWarning = "\n\nRisk Warning: Past performance ≠ future results. Consult a financial advisor.";
+                        addBotMessage(`Here are some stocks under ${priceLimitObj.currency}${priceLimitObj.price}:\n${stockList}${dividendNote}${riskWarning}`);
+                    }
+                } catch (error) {
+                    console.error('Error fetching stock recommendations:', error);
+                    hideTypingIndicator();
+                    addBotMessage(`Sorry, I encountered an error while fetching stock recommendations. Please try again later.`, true);
+                }
+                return;
+            }
             
             try {
                 const response = await fetch('/chat', {
@@ -1273,6 +1296,70 @@
                 hideTypingIndicator();
                 addBotMessage(`Sorry, I encountered an error. Please try again later or click retry below. (${error.message})`, true);
             }
+        }
+
+        // Parse price limit and currency from user message, return object or null if not found
+        function parsePriceLimit(message) {
+            // Regex to find patterns like "under 500 rupees", "below $1000", "less than 2000 rs"
+            const regex = /(?:under|below|less than|underneath|within)\s*(₹|\$)?\s*(\d{1,6})(?:\s*(?:rupees|rs|₹|\$))?/i;
+            const match = message.match(regex);
+            if (match && match[2]) {
+                return {
+                    price: parseInt(match[2], 10),
+                    currency: match[1] || '₹' // Default to INR if no symbol
+                };
+            }
+            return null;
+        }
+
+        // Fetch stock prices and filter stocks under the price limit with currency conversion
+        async function getStocksUnderPrice(priceLimitObj) {
+            const stocksToCheck = stocks; // stocks array defined earlier in the script
+            const results = [];
+            const USD_TO_INR = 82; // Fixed conversion rate
+            const INR_TO_USD = 1 / USD_TO_INR;
+
+            // Fetch stock data for each stock symbol sequentially (can be optimized)
+            for (const stock of stocksToCheck) {
+                try {
+                    const response = await fetch(`/stock?ticker=${stock.symbol}`);
+                    if (!response.ok) {
+                        console.warn(`Failed to fetch data for ${stock.symbol}`);
+                        continue;
+                    }
+                    const data = await response.json();
+                    if (data && data.Close) {
+                        const closeValues = Object.values(data.Close);
+                        if (closeValues.length > 0) {
+                            let lastPrice = closeValues[0];
+                            // Convert price based on query currency and stock type
+                            if (priceLimitObj.currency === '₹') {
+                                // Query in INR
+                                if (!stock.symbol.endsWith('.NS')) {
+                                    // Convert USD price to INR
+                                    lastPrice = lastPrice * USD_TO_INR;
+                                }
+                            } else if (priceLimitObj.currency === '$') {
+                                // Query in USD
+                                if (stock.symbol.endsWith('.NS')) {
+                                    // Convert INR price to USD
+                                    lastPrice = lastPrice * INR_TO_USD;
+                                }
+                            }
+                            if (lastPrice <= priceLimitObj.price) {
+                                results.push({
+                                    symbol: stock.symbol,
+                                    name: stock.name,
+                                    price: lastPrice
+                                });
+                            }
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Error fetching data for ${stock.symbol}:`, error);
+                }
+            }
+            return results;
         }
         
         // Handle send button click
