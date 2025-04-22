@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>AI Investment Advisor - Chat</title>
-    <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
     <style>
         /* Theme variables */
         :root {
@@ -17,7 +17,7 @@
             --header-bg: linear-gradient(135deg, #374151 0%, #1f2937 100%);
             --header-text: #ffffff;
             --border-color: #e1e4e8;
-            --card-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
             --primary-color: #6a6dff;
             --secondary-color: #5a5bd6;
             --message-user-bg: #6a6dff;
@@ -33,7 +33,7 @@
             --scrollbar-thumb: #cccccc;
             --scrollbar-thumb-hover: #aaaaaa;
         }
-        
+
         /* Dark theme */
         html[data-theme='dark'] {
             --bg-color: #1a1a2e;
@@ -42,7 +42,7 @@
             --header-bg: linear-gradient(135deg, #16213e 0%, #0f172a 100%);
             --header-text: #ffffff;
             --border-color: #384054;
-            --card-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
             --primary-color: #818aff;
             --secondary-color: #6a6dff;
             --message-user-bg: #6a6dff;
@@ -58,7 +58,7 @@
             --scrollbar-thumb: #4a4a6a;
             --scrollbar-thumb-hover: #6a6a8a;
         }
-        
+
         /* Theme toggle styles */
         .theme-toggle {
             background: none;
@@ -72,13 +72,14 @@
             right: 20px;
             top: 15px;
         }
-        
+
         .theme-toggle:hover {
             transform: rotate(30deg);
         }
-        
+
         /* Inline styles to override defaults */
-        html, body {
+        html,
+        body {
             margin: 0;
             padding: 0;
             font-family: 'Roboto', sans-serif;
@@ -87,14 +88,15 @@
             width: 100%;
             min-height: 100vh;
         }
-        
+
         .container {
             display: flex;
             flex-direction: column;
             min-height: 100vh;
+            max-width: 100%;
             background-color: var(--bg-color);
         }
-        
+
         header {
             background: var(--header-bg);
             color: var(--header-text);
@@ -108,27 +110,27 @@
             position: relative;
             flex-shrink: 0;
         }
-        
+
         .header-content {
             display: flex;
             flex-direction: column;
             align-items: center;
             width: 100%;
         }
-        
+
         header h1 {
             margin: 5px 0;
             font-weight: 700;
             color: var(--header-text);
             font-size: 2rem;
         }
-        
+
         header p {
             margin: 5px 0 0;
             opacity: 0.9;
             font-size: 1rem;
         }
-        
+
         .back-button {
             color: var(--header-text);
             text-decoration: none;
@@ -147,41 +149,45 @@
             font-size: 0.9rem;
             transition: background-color 0.2s ease;
         }
-        
+
         .back-button:hover {
             background-color: rgba(255, 255, 255, 0.25);
         }
-        
+
         .back-button i {
             margin-right: 5px;
         }
-        
+
         .main-content {
             display: flex;
             flex: 1;
             flex-direction: row;
         }
-        
+
         .content-wrapper {
-            width: 80%; /* Explicitly set to fill remaining space */
+            width: 80%;
+            /* Explicitly set to fill remaining space */
             flex: 1;
             display: flex;
             flex-direction: column;
         }
-        
+
         .sidebar {
             width: 25%;
             flex-shrink: 0;
-            height: 100vh; /* Full viewport height */
-            max-height: 1000vh; /* Ensure it doesn't grow beyond viewport */
+            height: 100vh;
+            /* Full viewport height */
+            max-height: 1000vh;
+            /* Ensure it doesn't grow beyond viewport */
             background-color: var(--card-bg);
             box-shadow: 2px 0 5px rgba(0, 0, 0, 0.05);
             display: flex;
             flex-direction: column;
             align-self: stretch;
-            overflow-y: auto; /* Make sidebar scrollable */
+            overflow-y: auto;
+            /* Make sidebar scrollable */
         }
-        
+
         .market-overview {
             padding: 10px 15px;
             flex: 1;
@@ -189,20 +195,20 @@
             flex-direction: column;
             overflow-y: visible;
         }
-        
+
         .market-overview h2 {
             flex-shrink: 0;
             font-size: 1.2rem;
             margin-bottom: 10px;
         }
-        
+
         .market-cards {
             overflow-y: auto;
             flex: 1;
             padding-right: 5px;
             min-height: 0;
         }
-        
+
         .market-card {
             background: var(--card-bg);
             border-radius: 10px;
@@ -214,44 +220,37 @@
             position: relative;
             border: 1px solid var(--border-color);
         }
-        
+
         .market-card i {
             font-size: 1.2rem;
             color: var(--chart-icon-color);
             margin-right: 12px;
         }
-        
+
         .market-card h3 {
             font-size: 0.95rem;
             margin: 0 0 5px;
         }
-        
+
         .market-card .price {
             font-weight: 600;
             margin: 0;
             font-size: 0.9rem;
         }
-        
+
         .market-card .change {
             font-size: 0.8rem;
             margin: 2px 0 0;
         }
-        
+
         .market-card .change.positive {
             color: var(--positive-color);
         }
-        
+
         .market-card .change.negative {
             color: var(--negative-color);
         }
-        
-        .news-container {
-            overflow-y: auto;
-            flex: 1;
-            flex-direction: column;
-            border-left: 1px solid var(--border-color);
-        }
-        
+
         .chat-container {
             flex: 1;
             display: flex;
@@ -260,7 +259,7 @@
             max-height: 100vh;
             overflow: hidden;
         }
-        
+
         .chat-header {
             padding: 15px;
             border-bottom: 1px solid var(--border-color);
@@ -269,17 +268,17 @@
             align-items: center;
             background-color: var(--card-bg);
         }
-        
+
         .chat-header h2 {
             font-size: 1.3rem;
             color: var(--text-color);
             margin: 0;
         }
-        
+
         .chat-controls {
             display: flex;
         }
-        
+
         .control-btn {
             background: none;
             border: none;
@@ -289,7 +288,7 @@
             cursor: pointer;
             padding: 5px;
         }
-        
+
         .chat-messages {
             flex: 1;
             overflow-y: auto;
@@ -297,21 +296,21 @@
             background-color: var(--bg-color);
             min-height: 150px;
         }
-        
+
         .message {
             margin-bottom: 15px;
             display: flex;
             flex-direction: column;
         }
-        
+
         .message.user {
             align-items: flex-end;
         }
-        
+
         .message.bot {
             align-items: flex-start;
         }
-        
+
         .message-content {
             max-width: 80%;
             padding: 12px 15px;
@@ -319,43 +318,43 @@
             font-size: 0.95rem;
             word-break: break-word;
         }
-        
+
         .message.user .message-content {
             background-color: var(--message-user-bg);
             color: var(--message-user-text);
             border-bottom-right-radius: 5px;
         }
-        
+
         .message.bot .message-content {
             background-color: var(--message-bot-bg);
             color: var(--message-bot-text);
             border-bottom-left-radius: 5px;
             box-shadow: var(--card-shadow);
         }
-        
+
         .message-content p {
             margin: 0 0 10px;
         }
-        
+
         .message-content p:last-child {
             margin-bottom: 0;
         }
-        
+
         .message-content ul {
             margin: 5px 0;
             padding-left: 25px;
         }
-        
+
         .message-content li {
             margin-bottom: 2px;
         }
-        
+
         .typing-indicator {
             display: none;
             padding: 15px;
             align-items: center;
         }
-        
+
         .typing-indicator span {
             height: 8px;
             width: 8px;
@@ -366,29 +365,35 @@
             margin-right: 5px;
             animation: typing 1s infinite ease-in-out;
         }
-        
+
         .typing-indicator span:nth-child(2) {
             animation-delay: 0.15s;
         }
-        
+
         .typing-indicator span:nth-child(3) {
             animation-delay: 0.3s;
             margin-right: 0;
         }
-        
+
         @keyframes typing {
-            0% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0); }
+            0% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+            100% {
+                transform: translateY(0);
+            }
         }
-        
+
         .chat-input-container {
             padding: 15px;
             display: flex;
             background-color: var(--card-bg);
             border-top: 1px solid var(--border-color);
         }
-        
+
         .input-wrapper {
             flex: 1;
             display: flex;
@@ -398,13 +403,13 @@
             padding: 10px 15px;
             margin-right: 10px;
         }
-        
+
         .input-wrapper i {
             color: var(--text-color);
             opacity: 0.7;
             margin-right: 8px;
         }
-        
+
         #userInput {
             flex: 1;
             border: none;
@@ -413,12 +418,12 @@
             font-size: 0.95rem;
             color: var(--text-color);
         }
-        
+
         #userInput::placeholder {
             color: var(--text-color);
             opacity: 0.5;
         }
-        
+
         #sendButton {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
@@ -431,273 +436,18 @@
             align-items: center;
             transition: all 0.3s ease;
         }
-        
+
         #sendButton:hover {
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(106, 109, 255, 0.3);
         }
-        
+
         #sendButton i {
             margin-right: 5px;
         }
-        
-        .loading-spinner, .news-loading i {
-            display: inline-block;
-            width: 16px;
-            height: 16px;
-            border: 2px solid rgba(0,0,0,0.1);
-            border-radius: 50%;
-            border-top-color: var(--primary-color);
-            animation: spin 0.8s linear infinite;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .market-card.loading .loading-spinner {
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-        }
-        
-        .news-loading, .news-error, .news-empty {
-            text-align: center;
-            padding: 20px;
-            color: var(--text-color);
-            opacity: 0.7;
-            font-size: 0.9rem;
-        }
-        
-        .news-loading i, .news-error i {
-            margin-bottom: 8px;
-            font-size: 1.2rem;
-        }
-        
-        .market-card.error {
-            border-color: #ffcccc;
-        }
-        
-        .retry-button {
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
-            border-radius: 15px;
-            padding: 5px 15px;
-            margin-top: 8px;
-            font-size: 0.85rem;
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-        
-        .retry-button:hover {
-            background: var(--hover-color);
-        }
-        
-        .news-section {
-            margin-top: 10px;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
-            border-top: 1px solid var(--border-color);
-            background-color: var(--card-bg);
-            flex-shrink: 0;
-            flex: 1; /* Allow news section to grow */
-            max-height: 80vh; /* Limit news section height */
-        }
-        
-        .news-section h2 {
-             font-size: 1.3rem;
-             color: var(--text-color);
-             margin-top: 0;
-             margin-bottom: 15px;
-        }
-
-        .news-container {
-            flex: 1;
-            overflow-y: auto; /* Ensure news container is scrollable */
-        }
-        
-        .news-item {
-            background: var(--card-bg);
-            border-radius: 10px;
-            padding: 12px;
-            margin-bottom: 12px;
-            box-shadow: var(--card-shadow);
-            border: 1px solid var(--border-color);
-        }
-        
-        .news-item h3 {
-            font-size: 0.95rem;
-            margin: 8px 0;
-            color: var(--text-color); /* Ensure title has full color */
-        }
-        
-        .news-item p {
-            font-size: 0.85rem;
-            color: var(--text-color);
-            opacity: 0.9; /* Slightly increase from default */
-            margin: 5px 0 8px;
-        }
-        
-        html[data-theme='dark'] .news-item p {
-            opacity: 1; /* Full opacity in dark mode for better readability */
-        }
-        
-        .news-header {
-            display: flex;
-            align-items: center;
-            font-size: 0.75rem;
-            color: var(--text-color);
-            opacity: 0.8;
-        }
-        
-        .news-item .sentiment {
-            margin-right: 8px;
-        }
-        
-        .news-item .source {
-            font-weight: 500;
-        }
-        
-        .news-item .date {
-            margin-left: auto;
-        }
-        
-        .news-item .read-more {
-            display: inline-block;
-            font-size: 0.8rem;
-            color: var(--primary-color);
-            text-decoration: none;
-            cursor: pointer;
-            font-weight: 500;
-            padding: 3px 0;
-        }
-        
-        .news-item .read-more:hover {
-            text-decoration: underline;
-        }
-        
-        .news-item.bullish .sentiment {
-            color: var(--positive-color);
-        }
-        
-        .news-item.bearish .sentiment {
-            color: var(--negative-color);
-        }
-        
-        /* Responsive adjustments */
-        @media (max-width: 900px) {
-            .main-content {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                height: 180px;
-                border-bottom: 1px solid var(--border-color);
-            }
-            .market-overview {
-                 border-bottom: none;
-            }
-            .content-wrapper {
-                border-left: none;
-            }
-        }
-
-        @media (max-width: 600px) {
-             .sidebar {
-                 height: 150px;
-             }
-             .news-section {
-                 height: 180px;
-             }
-        }
-
-        /* Custom Scrollbar for Market Cards */
-        .market-cards::-webkit-scrollbar {
-            width: 6px; /* Thinner scrollbar */
-        }
-
-        .market-cards::-webkit-scrollbar-track {
-            background: var(--scrollbar-track);
-            border-radius: 3px;
-        }
-
-        .market-cards::-webkit-scrollbar-thumb {
-            background-color: var(--scrollbar-thumb);
-            border-radius: 3px;
-            transition: background-color 0.2s ease;
-        }
-
-        .market-cards::-webkit-scrollbar-thumb:hover {
-            background-color: var(--scrollbar-thumb-hover);
-        }
-
-        /* News modal styles */
-        .news-modal-backdrop {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        
-        .news-modal {
-            background-color: var(--card-bg);
-            width: 90%;
-            max-width: 600px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        .news-modal-header {
-            padding: 15px;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .news-modal-header h3 {
-            margin: 0;
-            font-size: 1.1rem;
-            color: var(--text-color);
-        }
-        
-        .close-modal {
-            background: none;
-            border: none;
-            color: var(--text-color);
-            cursor: pointer;
-            font-size: 1.2rem;
-        }
-        
-        .news-modal-content {
-            padding: 15px;
-            color: var(--text-color);
-        }
-        
-        .news-source-date {
-            font-size: 0.85rem;
-            opacity: 0.8;
-            margin-bottom: 15px;
-        }
-        
-        .news-disclaimer {
-            margin-top: 20px;
-            font-style: italic;
-            opacity: 0.7;
-            font-size: 0.85rem;
-        }
     </style>
 </head>
+
 <body>
     <div class="container">
         <header>
@@ -713,7 +463,7 @@
                 <p>Chat with our AI to get investment insights and stock information</p>
             </div>
         </header>
-        
+
         <div class="main-content">
             <div class="sidebar">
                 <div class="market-overview">
@@ -723,7 +473,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="content-wrapper">
                 <div class="chat-container">
                     <div class="chat-header">
@@ -734,7 +484,7 @@
                             </button>
                         </div>
                     </div>
-                    
+
                     <div class="chat-messages" id="chatMessages">
                         <div class="message bot">
                             <div class="message-content">
@@ -744,42 +494,31 @@
                                     <li>Investment strategies and advice</li>
                                     <li>Market trends and analysis</li>
                                     <li>Company performance and financial data</li>
-                                    <li>Latest news for any stock or market</li>
                                 </ul>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="typing-indicator" id="typingIndicator">
                         <span></span>
                         <span></span>
                         <span></span>
                     </div>
-                    
+
                     <div class="chat-input-container">
                         <div class="input-wrapper">
                             <i class="fas fa-search"></i>
-                            <input type="text" id="userInput" placeholder="Ask about stocks, investments, or market trends...">
+                            <input type="text" id="userInput" placeholder="Ask about stocks, investments, or market trends..." />
                         </div>
                         <button id="sendButton">
                             <i class="fas fa-paper-plane"></i> Send
                         </button>
                     </div>
                 </div>
-
-                <div class="news-section">
-                    <h2>Latest Market News</h2>
-                    <div class="news-container" id="newsContainer">
-                        <div class="news-loading">
-                            <i class="fas fa-spinner fa-spin"></i>
-                            <p>Loading market news...</p>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
-    
+
     <script>
         // Global variables
         const chatMessages = document.getElementById('chatMessages');
@@ -788,52 +527,16 @@
         const typingIndicator = document.getElementById('typingIndicator');
         const clearChatButton = document.getElementById('clearChat');
         const marketCards = document.getElementById('marketCards');
-        const newsContainer = document.getElementById('newsContainer');
         const themeToggle = document.getElementById('themeToggle');
-        
-        // Function to show full news item when Read More is clicked
-        function showFullNewsItem(item) {
-            // Create modal container
-            const modalContainer = document.createElement('div');
-            modalContainer.className = 'news-modal-backdrop';
-            
-            // Create modal content
-            modalContainer.innerHTML = `
-                <div class="news-modal">
-                    <div class="news-modal-header">
-                        <h3>${item.title}</h3>
-                        <button class="close-modal"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="news-modal-content">
-                        <p class="news-source-date">${item.source} | ${item.published_date}</p>
-                        <p>${item.summary}</p>
-                        <p class="news-disclaimer">This is a preview of the full article.</p>
-                    </div>
-                </div>
-            `;
-            
-            // Add to document
-            document.body.appendChild(modalContainer);
-            
-            // Add event listener to close button
-            const closeBtn = modalContainer.querySelector('.close-modal');
-            closeBtn.addEventListener('click', function() {
-                modalContainer.remove();
-                document.body.style.overflow = 'auto';
-            });
-            
-            // Prevent scrolling on body
-            document.body.style.overflow = 'hidden';
-        }
-        
+
         // Theme toggle functionality
         themeToggle.addEventListener('click', () => {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-            
+
             html.setAttribute('data-theme', newTheme);
-            
+
             // Update icon
             const icon = themeToggle.querySelector('i');
             if (newTheme === 'dark') {
@@ -841,17 +544,17 @@
             } else {
                 icon.className = 'fas fa-moon';
             }
-            
+
             // Save theme preference to localStorage
             localStorage.setItem('theme', newTheme);
         });
-        
+
         // Load saved theme preference from localStorage
         document.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme) {
                 document.documentElement.setAttribute('data-theme', savedTheme);
-                
+
                 // Update icon based on saved theme
                 const icon = themeToggle.querySelector('i');
                 if (savedTheme === 'dark') {
@@ -860,11 +563,11 @@
                     icon.className = 'fas fa-moon';
                 }
             }
-            
+
             // Initialize market cards
             loadMarketCards();
         });
-        
+
         // Example stock symbols for Indian and global markets
         const stocks = [
             { symbol: '^NSEI', name: 'Nifty 50' },
@@ -888,11 +591,11 @@
             { symbol: 'TSLA', name: 'Tesla' },
             { symbol: 'NVDA', name: 'NVIDIA' }
         ];
-        
+
         // Load market overview cards
         function loadMarketCards() {
             marketCards.innerHTML = '';
-            
+
             stocks.forEach(stock => {
                 const card = document.createElement('div');
                 card.className = 'market-card loading';
@@ -906,167 +609,33 @@
                     <div class="loading-spinner"></div>
                 `;
                 marketCards.appendChild(card);
-                
+
                 // Fetch stock data
                 fetchStockData(stock.symbol, card);
             });
-            
-            // Load news after market cards
-            loadMarketNews();
         }
-        
-        // Load market news
-        function loadMarketNews() {
-            newsContainer.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading market news...</p></div>';
-            
-            // Fetch news for market indices
-            fetchStockNews('SPY', 5)  // S&P 500 ETF as a general market indicator
-                .then(news => {
-                    displayNews(news);
-                })
-                .catch(error => {
-                    console.error('Error loading market news:', error);
-                    // Generate mock news data if API fails
-                    const mockNews = generateMockNews();
-                    displayNews(mockNews);
-                });
-        }
-        
-        // Generate mock news when API fails
-        function generateMockNews() {
-            const mockNewsItems = [
-                {
-                    title: "Markets rally as central banks signal policy shift",
-                    summary: "Global markets responded positively to hints from major central banks about potential interest rate adjustments in response to changing economic conditions.",
-                    source: "Market News",
-                    sentiment: "bullish",
-                    published_date: new Date().toLocaleDateString(),
-                    url: "javascript:void(0);" // Use javascript:void(0) for mock links
-                },
-                {
-                    title: "Tech sector leads gains amid strong earnings reports",
-                    summary: "Technology companies posted better-than-expected quarterly results, driving the sector higher and providing momentum for broader market indices.",
-                    source: "Financial Times",
-                    sentiment: "bullish",
-                    published_date: new Date().toLocaleDateString(),
-                    url: "javascript:void(0);"
-                },
-                {
-                    title: "Oil prices fluctuate amid supply concerns",
-                    summary: "Crude oil prices experienced volatility as traders assessed potential disruptions to global supply chains and changing demand forecasts.",
-                    source: "Energy Report",
-                    sentiment: "neutral",
-                    published_date: new Date().toLocaleDateString(),
-                    url: "javascript:void(0);"
-                },
-                {
-                    title: "Inflation data shows modest cooling trend",
-                    summary: "The latest consumer price index figures indicate a slight moderation in inflation, potentially giving central banks more flexibility in monetary policy decisions.",
-                    source: "Economic Trends",
-                    sentiment: "bullish",
-                    published_date: new Date().toLocaleDateString(),
-                    url: "javascript:void(0);"
-                },
-                {
-                    title: "Market volatility increases as investors assess economic data",
-                    summary: "Traders are carefully weighing mixed economic indicators, leading to increased market fluctuations as sentiment shifts between optimism and caution.",
-                    source: "Investor Daily",
-                    sentiment: "neutral",
-                    published_date: new Date().toLocaleDateString(),
-                    url: "javascript:void(0);"
-                }
-            ];
-            return mockNewsItems;
-        }
-        
-        // Fetch news for a specific stock
-        async function fetchStockNews(symbol, limit = 3) {
-            try {
-                const response = await fetch(`/stock-news?symbol=${symbol}&limit=${limit}`);
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch news (${response.status})`);
-                }
-                const data = await response.json();
-                return data.news || [];
-            } catch (error) {
-                console.error(`Error fetching news for ${symbol}:`, error);
-                throw error;
-            }
-        }
-        
-        // Display news in the news container
-        function displayNews(newsItems) {
-            if (!newsItems || newsItems.length === 0) {
-                newsContainer.innerHTML = '<div class="news-empty"><p>No news available at this time</p></div>';
-                return;
-            }
-            
-            newsContainer.innerHTML = '';
-            
-            newsItems.forEach((item, index) => {
-                const sentimentClass = 
-                    item.sentiment === 'bullish' ? 'bullish' : 
-                    item.sentiment === 'bearish' ? 'bearish' : 'neutral';
-                    
-                const sentimentIcon = 
-                    item.sentiment === 'bullish' ? '<i class="fas fa-arrow-up"></i>' : 
-                    item.sentiment === 'bearish' ? '<i class="fas fa-arrow-down"></i>' : 
-                    '<i class="fas fa-minus"></i>';
-                
-                // Create the news item element
-                const newsItem = document.createElement('div');
-                newsItem.className = `news-item ${sentimentClass}`;
-                
-                // Construct the HTML, conditionally adding the summary
-                let newsHTML = `
-                    <div class="news-header">
-                        <span class="sentiment">${sentimentIcon}</span>
-                        <span class="source">${item.source || 'Unknown Source'}</span>
-                        <span class="date">${item.published_date || 'Unknown Date'}</span>
-                    </div>
-                    <h3>${item.title || 'No Title Available'}</h3>
-                `;
-                
-                // Only add the summary paragraph if the summary is not the default placeholder
-                const summaryText = item.summary;
-                if (summaryText && summaryText !== 'No summary available') {
-                    newsHTML += `<p>${summaryText.substring(0, 120)}${summaryText.length > 120 ? '...' : ''}</p>`;
-                }
-                
-                // Use a data attribute to store the index of the news item
-                newsHTML += `
-                    <button class="read-more-btn" data-news-index="${index}">Read More</button>
-                `;
-                
-                newsItem.innerHTML = newsHTML;
-                newsContainer.appendChild(newsItem);
-            });
-            
-            // Store news items in a global variable for access by event handlers
-            window.currentNewsItems = newsItems;
-        }
-        
+
         // Fetch stock data from our API
         async function fetchStockData(symbol, card) {
             try {
                 const response = await fetch(`/stock?ticker=${symbol}`);
                 const data = await response.json();
-                
+
                 if (data && data.Close) {
                     // Get the first item in data.Close (first key-value pair)
                     const closeValues = Object.values(data.Close);
                     const openValues = Object.values(data.Open);
-                    
+
                     const lastPrice = closeValues[0];
                     const prevPrice = openValues[0];
                     const change = lastPrice - prevPrice;
                     const percentChange = (change / prevPrice) * 100;
-                    
+
                     const priceElement = card.querySelector('.price');
                     const changeElement = card.querySelector('.change');
-                    
+
                     priceElement.textContent = `$${lastPrice.toFixed(2)}`;
-                    
+
                     if (change >= 0) {
                         changeElement.textContent = `+${change.toFixed(2)} (${percentChange.toFixed(2)}%)`;
                         changeElement.className = 'change positive';
@@ -1074,18 +643,18 @@
                         changeElement.textContent = `${change.toFixed(2)} (${percentChange.toFixed(2)}%)`;
                         changeElement.className = 'change negative';
                     }
-                    
+
                     card.classList.remove('loading');
                     // Remove the loading spinner
                     const spinner = card.querySelector('.loading-spinner');
                     if (spinner) {
                         spinner.remove();
                     }
-                    
+
                     // Make the card clickable to show news for this stock
                     card.style.cursor = 'pointer';
                     card.addEventListener('click', () => {
-                        showStockNews(symbol, card.querySelector('h3').textContent);
+                        // No news section now, so no action on click
                     });
                 }
             } catch (error) {
@@ -1097,73 +666,12 @@
                 if (spinner) {
                     spinner.remove();
                 }
-                
+
                 card.querySelector('.price').textContent = 'Error';
                 card.querySelector('.change').textContent = 'Failed to load data';
             }
         }
-        
-        // Show news for a specific stock when clicked
-        function showStockNews(symbol, stockName) {
-            // Update news section title
-            const newsTitle = document.querySelector('.news-section h2');
-            newsTitle.textContent = `${stockName} News`;
-            
-            // Show loading indicator
-            newsContainer.innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i><p>Loading news...</p></div>';
-            
-            // Fetch and display news
-            fetchStockNews(symbol, 5)
-                .then(news => {
-                    if (news && news.length > 0) {
-                        displayNews(news);
-                    } else {
-                        // Generate mock stock-specific news if no real news is available
-                        const mockNews = generateMockStockNews(stockName, symbol);
-                        displayNews(mockNews);
-                    }
-                })
-                .catch(error => {
-                    console.error(`Error loading news for ${symbol}:`, error);
-                    // Generate mock stock-specific news on error
-                    const mockNews = generateMockStockNews(stockName, symbol);
-                    displayNews(mockNews);
-                });
-        }
-        
-        // Generate mock news for a specific stock
-        function generateMockStockNews(stockName, symbol) {
-            const sentiments = ["bullish", "neutral", "bearish"];
-            const randomSentiment = () => sentiments[Math.floor(Math.random() * sentiments.length)];
-            
-            return [
-                {
-                    title: `${stockName} announces quarterly earnings results`,
-                    summary: `${stockName} reported their latest quarterly earnings, with investors closely watching key metrics and future guidance.`,
-                    source: "Financial News",
-                    sentiment: randomSentiment(),
-                    published_date: new Date().toLocaleDateString(),
-                    url: "#"
-                },
-                {
-                    title: `Analysts update outlook for ${stockName}`,
-                    summary: `Several major investment firms have revised their price targets for ${stockName} following recent market developments.`,
-                    source: "Market Analysis",
-                    sentiment: randomSentiment(),
-                    published_date: new Date().toLocaleDateString(),
-                    url: "#"
-                },
-                {
-                    title: `${stockName} explores new market opportunities`,
-                    summary: `Company executives outlined strategies for expansion into emerging sectors during their latest investor presentation.`,
-                    source: "Business Daily",
-                    sentiment: "bullish",
-                    published_date: new Date().toLocaleDateString(),
-                    url: "#"
-                }
-            ];
-        }
-        
+
         // Add user message to chat
         function addUserMessage(message) {
             const messageDiv = document.createElement('div');
@@ -1176,17 +684,17 @@
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
+
         // Add bot message to chat
         function addBotMessage(message, isError = false) {
             const messageDiv = document.createElement('div');
             messageDiv.className = 'message bot';
-            
+
             // Format the message text: Replace line breaks with <br> tags
             const formattedMessage = message.replace(/\n/g, '<br>');
-            
+
             let messageHTML = `<div class="message-content">`;
-            
+
             if (isError) {
                 messageHTML += `
                     <p>${formattedMessage}</p>
@@ -1195,57 +703,34 @@
             } else {
                 messageHTML += `<p>${formattedMessage}</p>`;
             }
-            
+
             messageHTML += `</div>`;
             messageDiv.innerHTML = messageHTML;
             chatMessages.appendChild(messageDiv);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            
-            // Check if the message contains a stock symbol, extract it for news loading
-            if (!isError) {
-                extractStockSymbolAndLoadNews(message);
-            }
         }
-        
-        // Extract stock symbol from bot message and load news if found
-        function extractStockSymbolAndLoadNews(message) {
-            // Look for patterns like "Symbol: XYZ" or "(XYZ)" or common formats
-            const symbolRegex = /\(([A-Za-z0-9\.\^-]{1,10})\)/;
-            const match = message.match(symbolRegex);
-            
-            if (match && match[1]) {
-                const symbol = match[1];
-                // Look for a stock name pattern before the symbol
-                const nameRegex = new RegExp(`([A-Za-z\\s.,&]+)\\s*\\(${symbol}\\)`);
-                const nameMatch = message.match(nameRegex);
-                const stockName = nameMatch ? nameMatch[1].trim() : symbol;
-                
-                // Update news section title and load news
-                showStockNews(symbol, stockName);
-            }
-        }
-        
+
         // Store the last message for retry functionality
         let lastUserMessage = '';
-        
+
         // Retry the last message
         function retryLastMessage() {
             if (lastUserMessage) {
                 sendMessage(lastUserMessage);
             }
         }
-        
+
         // Show typing indicator
         function showTypingIndicator() {
             typingIndicator.style.display = 'flex';
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
-        
+
         // Hide typing indicator
         function hideTypingIndicator() {
             typingIndicator.style.display = 'none';
         }
-        
+
         // Send message to API and get response
         async function sendMessage(message) {
             showTypingIndicator();
@@ -1273,7 +758,7 @@
                 }
                 return;
             }
-            
+
             try {
                 const response = await fetch('/chat', {
                     method: 'POST',
@@ -1282,12 +767,12 @@
                     },
                     body: JSON.stringify({ message })
                 });
-                
+
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(`Server error (${response.status}): ${errorText}`);
                 }
-                
+
                 const data = await response.json();
                 hideTypingIndicator();
                 addBotMessage(data);
@@ -1361,7 +846,7 @@
             }
             return results;
         }
-        
+
         // Handle send button click
         sendButton.addEventListener('click', () => {
             const message = userInput.value.trim();
@@ -1371,7 +856,7 @@
                 sendMessage(message);
             }
         });
-        
+
         // Handle enter key press in input
         userInput.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
@@ -1383,7 +868,7 @@
                 }
             }
         });
-        
+
         // Handle clear chat button
         clearChatButton.addEventListener('click', () => {
             // Keep only the first welcome message
@@ -1391,21 +876,6 @@
             chatMessages.innerHTML = '';
             chatMessages.appendChild(welcomeMessage);
         });
-        
-        // Add event delegation for Read More buttons
-        document.addEventListener('click', function(event) {
-            if (event.target.classList.contains('read-more-btn')) {
-                const newsIndex = event.target.getAttribute('data-news-index');
-                if (window.currentNewsItems && window.currentNewsItems[newsIndex]) {
-                    showFullNewsItem(window.currentNewsItems[newsIndex]);
-                }
-            }
-        });
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            loadMarketCards();
-        });
     </script>
 </body>
-</html> 
+</html>

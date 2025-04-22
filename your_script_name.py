@@ -15,10 +15,10 @@ logging.basicConfig(level=logging.INFO,
 app = Flask(__name__)
 
 # Set your OpenAI API key
-api_key = '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'
+api_key = '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'
 
 # Track API availability
-openai_api_available = False # Set to False since OpenAI is currently mocked
+openai_api_available = True  # Set to True to indicate OpenAI API is available
 
 # Function to fetch stock data
 def get_stock_data(ticker):
@@ -58,64 +58,64 @@ def stock():
     return jsonify(result)
 
 # Function to get news for a stock using Yahoo Finance
-def get_stock_news(symbol, limit=3):
-    try:
-        app.logger.info(f"Fetching news for symbol: {symbol} using yfinance")
-        stock = yf.Ticker(symbol)
-        news = stock.news
+# def get_stock_news(symbol, limit=3):
+#     try:
+#         app.logger.info(f"Fetching news for symbol: {symbol} using yfinance")
+#         stock = yf.Ticker(symbol)
+#         news = stock.news
         
-        app.logger.info(f"Raw news data received for {symbol}: {news}") # Log raw data
+#         app.logger.info(f"Raw news data received for {symbol}: {news}") # Log raw data
         
-        if not news:
-            app.logger.info(f"No news found for {symbol} via yfinance.")
-            return None
+#         if not news:
+#             app.logger.info(f"No news found for {symbol} via yfinance.")
+#             return None
             
-        # Process the news items
-        news_items = []
-        app.logger.info(f"Processing {len(news)} news items for {symbol}...")
-        for i, item in enumerate(news[:limit]):  # Limit to the requested number of items
-            app.logger.info(f"Processing item {i}: {item}") # Log each item
+#         # Process the news items
+#         news_items = []
+#         app.logger.info(f"Processing {len(news)} news items for {symbol}...")
+#         for i, item in enumerate(news[:limit]):  # Limit to the requested number of items
+#             app.logger.info(f"Processing item {i}: {item}") # Log each item
             
-            # Format the date (provider_publish_time is usually a Unix timestamp)
-            published_date = "Unknown date"
-            if 'providerPublishTime' in item and item['providerPublishTime']:
-                try:
-                    timestamp = item['providerPublishTime']
-                    dt = datetime.fromtimestamp(timestamp)
-                    published_date = dt.strftime("%b %d, %Y")
-                except Exception as date_err:
-                    app.logger.warning(f"Could not parse news date for {symbol}: {date_err} (Timestamp: {item.get('providerPublishTime')})")
-            else:
-                app.logger.warning(f"No providerPublishTime found for item {i} of {symbol}")
+#             # Format the date (provider_publish_time is usually a Unix timestamp)
+#             published_date = "Unknown date"
+#             if 'providerPublishTime' in item and item['providerPublishTime']:
+#                 try:
+#                     timestamp = item['providerPublishTime']
+#                     dt = datetime.fromtimestamp(timestamp)
+#                     published_date = dt.strftime("%b %d, %Y")
+#                 except Exception as date_err:
+#                     app.logger.warning(f"Could not parse news date for {symbol}: {date_err} (Timestamp: {item.get('providerPublishTime')})")
+#             else:
+#                 app.logger.warning(f"No providerPublishTime found for item {i} of {symbol}")
 
-            # Check for essential fields
-            title = item.get('title', 'No title available')
-            link = item.get('link', '#')
-            publisher = item.get('publisher', 'Unknown source')
-            summary = item.get('summary', 'No summary available') # yfinance might not have summary
+#             # Check for essential fields
+#             title = item.get('title', 'No title available')
+#             link = item.get('link', '#')
+#             publisher = item.get('publisher', 'Unknown source')
+#             summary = item.get('summary', 'No summary available') # yfinance might not have summary
 
-            if title == 'No title available' or link == '#':
-                app.logger.warning(f"Skipping news item {i} for {symbol} due to missing title or link.")
-                continue
+#             if title == 'No title available' or link == '#':
+#                 app.logger.warning(f"Skipping news item {i} for {symbol} due to missing title or link.")
+#                 continue
             
-            # yfinance doesn't provide sentiment, so we'll set it to neutral
-            news_items.append({
-                'title': title,
-                'summary': summary,
-                'url': link,
-                'source': publisher,
-                'published_date': published_date,
-                'sentiment': 'neutral' # Set sentiment to neutral as yfinance doesn't provide it
-            })
+#             # yfinance doesn't provide sentiment, so we'll set it to neutral
+#             news_items.append({
+#                 'title': title,
+#                 'summary': summary,
+#                 'url': link,
+#                 'source': publisher,
+#                 'published_date': published_date,
+#                 'sentiment': 'neutral' # Set sentiment to neutral as yfinance doesn't provide it
+#             })
             
-        app.logger.info(f"Finished processing news for {symbol}. Returning {len(news_items)} items.")
-        return news_items
-    except Exception as e:
-        app.logger.error(f"Error fetching yfinance news for {symbol}: {str(e)}", exc_info=True) # Log traceback
-        return None
+#         app.logger.info(f"Finished processing news for {symbol}. Returning {len(news_items)} items.")
+#         return news_items
+#     except Exception as e:
+#         app.logger.error(f"Error fetching yfinance news for {symbol}: {str(e)}", exc_info=True) # Log traceback
+#         return None
 
 # Function to get information for a specific stock symbol
-def get_specific_stock_info(symbol, include_recommendation=True, include_news=True):
+def get_specific_stock_info(symbol, include_recommendation=True, include_news=False):
     try:
         app.logger.info(f"Fetching data for stock symbol: {symbol}")
         
@@ -137,7 +137,7 @@ def get_specific_stock_info(symbol, include_recommendation=True, include_news=Tr
                         return "I couldn't retrieve data for Bharti Airtel Partly Paid shares (AIRTELPP.NS) at this time. This may be because the partly paid shares have been converted to fully paid shares. Please try querying BHARTIARTL.NS for regular Bharti Airtel shares."
                     
                     # Return information for regular shares with a note
-                    result = get_specific_stock_info("BHARTIARTL.NS", include_recommendation, include_news)
+                    result = get_specific_stock_info("BHARTIARTL.NS", include_recommendation, False)
                     if result:
                         return "Note: AIRTELPP.NS (Bharti Airtel Partly Paid shares) may not be available or have been converted to fully paid shares. Here's information for regular Bharti Airtel shares instead:\n\n" + result
                     else:
@@ -244,25 +244,13 @@ def get_specific_stock_info(symbol, include_recommendation=True, include_news=Tr
             except Exception as rec_error:
                 app.logger.error(f"Error generating recommendation for {symbol}: {str(rec_error)}")
                 
-        # Add news if requested
-        if include_news:
-            try:
-                news = get_stock_news(symbol)
-                if news and len(news) > 0:
-                    result += "\n\nRecent News:\n"
-                    for item in news:
-                        sentiment_emoji = "🟢" if item['sentiment'] == 'bullish' else "🔴" if item['sentiment'] == 'bearish' else "⚪"
-                        result += f"\n{sentiment_emoji} {item['title']} ({item['source']}, {item['published_date']})"
-                        result += f"\n{item['summary'][:150]}..." if len(item['summary']) > 150 else f"\n{item['summary']}"
-                        result += f"\nRead more: {item['url']}\n"
-            except Exception as news_error:
-                app.logger.error(f"Error getting news for {symbol}: {str(news_error)}")
-                
+        # News functionality has been removed
+        
         app.logger.info(f"Successfully retrieved info for {symbol}")
         return result
     except Exception as e:
-        app.logger.error(f"Error fetching stock data for {symbol}: {str(e)}")
-        return f"I encountered an error while getting information for {symbol}. This could be due to limited data availability or an issue with the stock symbol. If this is an Indian stock, try adding .NS (for NSE) or .BO (for BSE) suffix. Error details: {str(e)}"
+        app.logger.error(f"Error getting specific stock info for {symbol}: {str(e)}", exc_info=True)
+        return None
 
 # Function to analyze a stock and provide a recommendation
 def get_stock_recommendation(symbol, stock, info, current_data):
@@ -497,7 +485,137 @@ def generate_local_response(query):
     # Default fallback response
     return "I'm currently operating in stock information mode. You can ask me about specific stocks like 'What's the price of RELIANCE.NS?' or 'Tell me about Apple stock'."
 
-# Function to call OpenAI API with better error handling
+# Function to detect if a query is a natural language market analysis request
+def is_natural_language_market_analysis(query):
+    query = query.lower()
+    keywords = [
+        "explain the effect",
+        "summarize key drivers",
+        "market trend",
+        "economic indicators",
+        "policy shifts",
+        "tariffs",
+        "trade war",
+        "inflation",
+        "interest rates",
+        "market analysis",
+        "natural language",
+        "detailed insights",
+        "financial trends",
+        "stock market trends",
+        "market sentiment",
+        "macroeconomic",
+        "geopolitical",
+        "market impact",
+        "trade policy",
+        "economic policy",
+        "market forecast",
+        "market outlook",
+        "market prediction",
+        "market direction",
+        "fed decision",
+        "central bank",
+        "market report",
+        "global markets",
+        "sector performance",
+        "industry outlook"
+    ]
+    return any(keyword in query for keyword in keywords)
+
+# Function to fetch economic indicators (mocked for now)
+def get_economic_indicators():
+    # In a real implementation, fetch from an API or database
+    indicators = """
+    - U.S. unemployment rate: 3.7%
+    - U.S. inflation rate (CPI): 4.2%
+    - Federal Reserve interest rate: 5.25%
+    - GDP growth rate (Q1 2024): 2.1%
+    - Consumer confidence index: 98.5
+    """
+    return indicators
+
+# Function to fetch recent policy shifts (mocked for now)
+def get_policy_shifts():
+    # In a real implementation, fetch from news or government sources
+    policy_shifts = """
+    - Recent U.S. tariffs on imported steel and aluminum increased by 10%
+    - New trade agreements signed with several Asian countries
+    - Proposed changes to corporate tax rates under review
+    - Environmental regulations tightened for manufacturing sector
+    """
+    return policy_shifts
+
+# Function to gather market data for enhanced analysis
+def get_market_data_for_analysis():
+    market_data = {}
+    
+    # Get data for key indices
+    indices = {
+        "S&P 500": "^GSPC",
+        "Dow Jones": "^DJI",
+        "NASDAQ": "^IXIC",
+        "Nifty 50": "^NSEI",
+        "Sensex": "^BSESN",
+        "Russell 2000": "^RUT"
+    }
+    
+    for name, symbol in indices.items():
+        try:
+            data = get_stock_data(symbol)
+            if not data.empty:
+                last_price = data['Close'].iloc[-1]
+                open_price = data['Open'].iloc[-1]
+                change = last_price - open_price
+                percent_change = (change / open_price) * 100
+                
+                market_data[name] = {
+                    "price": last_price,
+                    "change": change,
+                    "percent_change": percent_change,
+                    "direction": "up" if change >= 0 else "down"
+                }
+        except Exception as e:
+            app.logger.warning(f"Could not get data for {name} ({symbol}): {str(e)}")
+    
+    return market_data
+
+# Get current sector performance
+def get_sector_performance():
+    sectors = {
+        "Technology": ["AAPL", "MSFT", "GOOGL"],
+        "Finance": ["JPM", "BAC", "GS"],
+        "Healthcare": ["JNJ", "PFE", "UNH"],
+        "Consumer": ["AMZN", "WMT", "PG"],
+        "Energy": ["XOM", "CVX", "COP"],
+        "Industrial": ["GE", "BA", "CAT"]
+    }
+    
+    results = {}
+    
+    for sector, stocks in sectors.items():
+        sector_changes = []
+        for stock in stocks:
+            try:
+                data = get_stock_data(stock)
+                if not data.empty:
+                    last_price = data['Close'].iloc[-1]
+                    open_price = data['Open'].iloc[-1]
+                    percent_change = ((last_price - open_price) / open_price) * 100
+                    sector_changes.append(percent_change)
+            except Exception:
+                continue
+        
+        if sector_changes:
+            avg_change = sum(sector_changes) / len(sector_changes)
+            results[sector] = {
+                "change": avg_change,
+                "direction": "up" if avg_change >= 0 else "down",
+                "strength": "strong" if abs(avg_change) > 1 else "moderate" if abs(avg_change) > 0.3 else "weak"
+            }
+    
+    return results
+
+# Enhanced function to call OpenAI API with natural language market analysis support
 def get_openai_response(user_message):
     global openai_api_available
     
@@ -511,7 +629,100 @@ def get_openai_response(user_message):
             if stock_info:
                 return stock_info
     
-    # If not a recommendation or we couldn't get a recommendation,
+    # Check if this is a natural language market analysis request
+    if is_natural_language_market_analysis(user_message):
+        app.logger.info("Detected natural language market analysis request")
+        
+        # Gather comprehensive market data
+        economic_data = get_economic_indicators()
+        policy_data = get_policy_shifts()
+        market_indices = get_market_data_for_analysis()
+        sectors = get_sector_performance()
+        
+        # Create market indices summaries
+        indices_summary = ""
+        for name, data in market_indices.items():
+            direction = "up" if data['change'] >= 0 else "down"
+            emoji = "📈" if data['change'] >= 0 else "📉"
+            indices_summary += f"{emoji} {name}: {data['price']:.2f} ({direction} {abs(data['percent_change']):.2f}%)\n"
+        
+        # Create sector performance summary
+        sector_summary = ""
+        for sector, data in sectors.items():
+            emoji = "🟢" if data['direction'] == "up" else "🔴"
+            sector_summary += f"{emoji} {sector}: {data['change']:.2f}% ({data['strength']} {data['direction']})\n"
+        
+        # Create mock market news summaries since we've removed the news functionality
+        news_summaries = """
+        - S&P 500 gains momentum as tech sector rallies
+        - Federal Reserve signals cautious approach to interest rates
+        - Global markets respond to economic data releases
+        - Earnings season shows mixed results across industries
+        - Renewable energy stocks see increased investor interest
+        """
+        
+        # Build enhanced system message with comprehensive market context
+        system_message = (
+            "You are an AI assistant specialized in market analysis and financial trends. "
+            "You provide detailed, professional insights based on current market data. "
+            "Use the following data to provide detailed insights in response to the user's query:\n\n"
+            f"## Market Indices\n{indices_summary}\n"
+            f"## Sector Performance\n{sector_summary}\n"
+            f"## Market News Headlines\n{news_summaries}\n"
+            f"## Economic Indicators\n{economic_data}\n"
+            f"## Policy Shifts\n{policy_data}\n\n"
+            "Provide a clear, concise, and insightful analysis based on the user's query. "
+            "Include specific data points where relevant, and present a balanced view of market conditions. "
+            "Conclude with potential implications for investors, but avoid making specific investment recommendations."
+        )
+        
+        data = {
+            "model": "gpt-3.5-turbo",
+            "messages": [
+                {"role": "system", "content": system_message},
+                {"role": "user", "content": user_message}
+            ],
+            "max_tokens": 400
+        }
+        
+        url = f"{openai_api_base}/chat/completions"
+        
+        # Headers for project-based API keys (sk-proj-*)
+        if api_key.startswith('sk-proj-'):
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}",
+            }
+        else:
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {api_key}"
+            }
+        
+        try:
+            app.logger.info(f"Calling OpenAI API for market analysis with URL: {url}")
+            response = requests.post(url, headers=headers, json=data, timeout=15)
+            
+            app.logger.info(f"OpenAI API response status: {response.status_code}")
+            
+            if response.status_code != 200:
+                app.logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
+                openai_api_available = False
+                return generate_local_response(user_message)
+            
+            openai_api_available = True
+            result = response.json()
+            return result["choices"][0]["message"]["content"]
+        except requests.exceptions.RequestException as e:
+            app.logger.error(f"OpenAI API connection error: {str(e)}")
+            openai_api_available = False
+            return generate_local_response(user_message)
+        except Exception as e:
+            app.logger.error(f"OpenAI API unexpected error: {str(e)}")
+            openai_api_available = False
+            return generate_local_response(user_message)
+    
+    # If not a recommendation or market analysis request,
     # proceed with general stock info checking
     stock_info = check_for_stock_info(user_message)
     if stock_info:
@@ -530,11 +741,8 @@ def get_openai_response(user_message):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}",
-            # The line below is commented out as OpenAI often uses the Authorization header alone
-            # "OpenAI-Organization": "org-..." # Add your org ID if you have one
         }
     else:
-        # Regular API key headers
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {api_key}"
@@ -744,23 +952,21 @@ def recommend_stock():
         return jsonify({"error": "An error occurred while analyzing the stock"}), 500
 
 # Endpoint to get news for a specific stock
-@app.route('/stock-news', methods=['GET'])
-def stock_news():
-    try:
-        symbol = request.args.get('symbol', '').strip()
-        limit = int(request.args.get('limit', 3))
-        
-        if not symbol:
-            return jsonify({"error": "Please provide a stock symbol"}), 400
-            
-        news = get_stock_news(symbol, limit=limit)
-        if news:
-            return jsonify({"news": news})
-        else:
-            return jsonify({"error": "No news found for this symbol"}), 404
-    except Exception as e:
-        app.logger.error(f"Error in news endpoint: {str(e)}")
-        return jsonify({"error": "An error occurred while fetching news"}), 500
+# @app.route('/stock-news', methods=['GET'])
+# def stock_news():
+#     """Endpoint to get news for a specific stock symbol"""
+#     try:
+#         symbol = request.args.get('symbol')
+#         limit = int(request.args.get('limit', 3))
+#         
+#         if not symbol:
+#             return jsonify({"error": "No stock symbol provided"}), 400
+#             
+#         # News functionality has been removed
+#         return jsonify({"news": []}), 404
+#     except Exception as e:
+#         app.logger.error(f"Error in news endpoint: {str(e)}")
+#         return jsonify({"error": "An error occurred while fetching news"}), 500
 
 # Function to check for stock information in the query
 def check_for_stock_info(query):
