@@ -1,2 +1,1 @@
-# investment-chatbot
- investment tracker
+investment-chatbot
