@@ -1,0 +1,10 @@
+Flask==2.3.3
+yfinance==0.2.31
+requests==2.31.0
+pandas==2.1.0
+numpy==1.25.2
+python-dotenv==1.0.0
+flask-cors==4.0.0
+Werkzeug==2.3.7
+google-generativeai==0.3.1
+logging==0.4.9.6 
