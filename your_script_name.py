@@ -6,6 +6,7 @@ import os
 import re
 import logging
 from datetime import datetime
+import google.generativeai as genai  # Import Google Generative AI library
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -14,11 +15,15 @@ logging.basicConfig(level=logging.INFO,
 # Initialize Flask app
 app = Flask(__name__)
 
-# Set your OpenAI API key
-api_key = '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'
+# Set your Google API key
+api_key = 'AIzaSyDfTKLzfBqmUOewYJtMJUP3Kg59QHNmT1I'
+
+# Configure the Gemini model
+genai.configure(api_key=api_key)
+model = genai.GenerativeModel('gemini-1.5-pro')  # Use the Gemini 1.5 Pro model
 
 # Track API availability
-openai_api_available = True  # Set to True to indicate OpenAI API is available
+api_available = True  # Set to True to indicate API is available
 
 # Function to fetch stock data
 def get_stock_data(ticker):
@@ -392,6 +397,151 @@ def get_stock_recommendation(symbol, stock, info, current_data):
         app.logger.error(f"Error generating recommendation: {str(e)}")
         return None
 
+# Define a function to extract and check for stock symbols in user queries
+def check_for_stock_info(query, for_chat=False):
+    """
+    Extract stock symbol from user query and return appropriate values.
+    If for_chat=True: Returns a tuple of (stock_symbol, stock_text) 
+    If for_chat=False: Returns stock info string or None
+    """
+    app.logger.info(f"Checking for stock info in: {query}")
+    
+    # Clean up the query for better matching
+    cleaned_query = query.strip().upper()
+    
+    # Remove trailing words like "STOCK", "PRICE", etc.
+    cleaned_query = re.sub(r'\s+(STOCK|PRICE|OF|SHARES?)$', '', cleaned_query)
+    
+    # Define patterns to identify stock price queries
+    patterns = [
+        # Direct symbol queries
+        r'(?:^|[^\w])([A-Z]{1,5})(?:\.[A-Z]{2})?(?:[^\w]|$)',  # Simple ticker like AAPL or TCS.NS
+        
+        # Natural language queries
+        r'(?:PRICE|VALUE|QUOTE|INFO|DETAILS|INFORMATION|DATA)\s+(?:OF|FOR|ON|ABOUT)?\s+([A-Z0-9\.\-_]+)',
+        r'(?:HOW\s+(?:MUCH|IS))\s+([A-Z0-9\.\-_]+)(?:\s+WORTH)?',
+        r'(?:WHAT\'?S|WHAT\s+IS)\s+(?:THE\s+)?(?:PRICE|VALUE|QUOTE)\s+(?:OF|FOR)?\s+([A-Z0-9\.\-_]+)',
+        r'(?:TELL\s+(?:ME\s+)?ABOUT)\s+([A-Z0-9\.\-\s_]+)',
+        r'(?:INFO|INFORMATION|DETAILS|DATA)\s+(?:FOR|ON|ABOUT)?\s+([A-Z0-9\.\-\s_]+)',
+    ]
+    
+    # Check for known company/stock mappings to handle company names
+    company_to_symbol = {
+        # Indian stocks
+        'RELIANCE': 'RELIANCE.NS',
+        'RELIANCE INDUSTRIES': 'RELIANCE.NS',
+        'TCS': 'TCS.NS',
+        'TATA CONSULTANCY SERVICES': 'TCS.NS',
+        'HDFC': 'HDFCBANK.NS',
+        'HDFC BANK': 'HDFCBANK.NS',
+        'INFOSYS': 'INFY.NS',
+        'SBI': 'SBIN.NS',
+        'STATE BANK OF INDIA': 'SBIN.NS',
+        'ICICI': 'ICICIBANK.NS',
+        'ICICI BANK': 'ICICIBANK.NS',
+        'AIRTEL': 'BHARTIARTL.NS',
+        'BHARTI AIRTEL': 'BHARTIARTL.NS',
+        'ADANI PORTS': 'ADANIPORTS.NS',
+        'TATA MOTORS': 'TATAMOTORS.NS',
+        
+        # US stocks
+        'APPLE': 'AAPL',
+        'MICROSOFT': 'MSFT',
+        'AMAZON': 'AMZN',
+        'GOOGLE': 'GOOGL',
+        'ALPHABET': 'GOOGL',
+        'TESLA': 'TSLA',
+        'META': 'META',
+        'FACEBOOK': 'META',
+        'NETFLIX': 'NFLX',
+        'JPMORGAN': 'JPM',
+        'JP MORGAN': 'JPM',
+        'VISA': 'V',
+        'DISNEY': 'DIS',
+        'NVIDIA': 'NVDA',
+        
+        # Major indices
+        'NIFTY': '^NSEI',
+        'NIFTY 50': '^NSEI',
+        'SENSEX': '^BSESN',
+        'DOW': '^DJI',
+        'DOW JONES': '^DJI',
+        'NASDAQ': '^IXIC',
+        'S&P': '^GSPC',
+        'S&P 500': '^GSPC',
+    }
+    
+    # First, check for direct company name matches
+    for company, symbol in company_to_symbol.items():
+        if company in cleaned_query:
+            app.logger.info(f"Found direct company match: {company} -> {symbol}")
+            
+            # For generate_local_response
+            stock_info = get_specific_stock_info(symbol)
+            if stock_info:
+                if for_chat:
+                    return symbol, company
+                else:
+                    return stock_info
+            
+    # Try matching patterns for stock symbols
+    for pattern in patterns:
+        match = re.search(pattern, cleaned_query)
+        if match:
+            potential_symbol = match.group(1).strip()
+            
+            # Clean up potential multi-word symbols for better matching
+            potential_symbol = re.sub(r'\s+', '', potential_symbol)
+            
+            app.logger.info(f"Found pattern match: {potential_symbol}")
+            
+            # Handle NIFTY/SENSEX as special cases
+            if 'NIFTY' in potential_symbol:
+                symbol = '^NSEI'
+                stock_info = get_specific_stock_info(symbol)
+                if stock_info:
+                    if for_chat:
+                        return symbol, potential_symbol
+                    else:
+                        return stock_info
+            elif 'SENSEX' in potential_symbol:
+                symbol = '^BSESN'
+                stock_info = get_specific_stock_info(symbol)
+                if stock_info:
+                    if for_chat:
+                        return symbol, potential_symbol
+                    else:
+                        return stock_info
+            
+            # Try with the potential symbol directly
+            symbol = potential_symbol
+            stock_info = get_specific_stock_info(symbol)
+            
+            if stock_info:
+                if for_chat:
+                    return symbol, potential_symbol
+                else:
+                    return stock_info
+            
+            # For Indian companies, try adding .NS suffix if missing
+            if not '.' in symbol and len(symbol) >= 2:
+                symbol_with_ns = f"{symbol}.NS"
+                app.logger.info(f"Trying with .NS suffix: {symbol_with_ns}")
+                stock_info = get_specific_stock_info(symbol_with_ns)
+                
+                if stock_info:
+                    if for_chat:
+                        return symbol_with_ns, potential_symbol
+                    else:
+                        return stock_info
+    
+    app.logger.info("No stock info found in query")
+    # Different return value based on context
+    if for_chat:
+        return None, None
+    else:
+        return None
+
 # Check for specific stock recommendation requests
 def is_recommendation_request(query):
     query = query.lower()
@@ -459,7 +609,7 @@ def generate_local_response(query):
     }
     
     # Check if the user is asking about a stock
-    stock_info = check_for_stock_info(query)
+    stock_info = check_for_stock_info(query, for_chat=False)
     if stock_info:
         return stock_info
     
@@ -518,46 +668,99 @@ def is_natural_language_market_analysis(query):
         "market report",
         "global markets",
         "sector performance",
-        "industry outlook"
+        "industry outlook",
+        "analyze",
+        "analyse",
+        "performance",
+        "america",
+        "us market",
+        "global economy",
+        "market condition",
+        "economy",
+        "bull market",
+        "bear market",
+        "volatile",
+        "volatility",
+        "india",
+        "indian economy",
+        "nifty",
+        "sensex",
+        "rbi"
     ]
     return any(keyword in query for keyword in keywords)
 
 # Function to fetch economic indicators (mocked for now)
-def get_economic_indicators():
-    # In a real implementation, fetch from an API or database
-    indicators = """
+def get_economic_indicators(country=None):
+    # Default to US data
+    us_indicators = """
     - U.S. unemployment rate: 3.7%
     - U.S. inflation rate (CPI): 4.2%
     - Federal Reserve interest rate: 5.25%
     - GDP growth rate (Q1 2024): 2.1%
     - Consumer confidence index: 98.5
     """
-    return indicators
+    
+    # India-specific indicators
+    india_indicators = """
+    - India unemployment rate: 7.4%
+    - India inflation rate (CPI): 5.1%
+    - RBI repo rate: 6.5%
+    - GDP growth rate (FY 2023-24): 7.2%
+    - India manufacturing PMI: 57.3
+    """
+    
+    if country and country.lower() == 'india':
+        return india_indicators
+    else:
+        return us_indicators
 
 # Function to fetch recent policy shifts (mocked for now)
-def get_policy_shifts():
-    # In a real implementation, fetch from news or government sources
-    policy_shifts = """
+def get_policy_shifts(country=None):
+    # Default to US policy data
+    us_policy = """
     - Recent U.S. tariffs on imported steel and aluminum increased by 10%
     - New trade agreements signed with several Asian countries
     - Proposed changes to corporate tax rates under review
     - Environmental regulations tightened for manufacturing sector
     """
-    return policy_shifts
+    
+    # India-specific policy data
+    india_policy = """
+    - RBI maintained repo rate at 6.5% in latest monetary policy
+    - New foreign direct investment regulations implemented for e-commerce
+    - Production-Linked Incentive (PLI) schemes expanded to more sectors
+    - GST Council considering rate rationalization for several product categories
+    """
+    
+    if country and country.lower() == 'india':
+        return india_policy
+    else:
+        return us_policy
 
 # Function to gather market data for enhanced analysis
-def get_market_data_for_analysis():
+def get_market_data_for_analysis(country=None):
     market_data = {}
     
     # Get data for key indices
-    indices = {
-        "S&P 500": "^GSPC",
-        "Dow Jones": "^DJI",
-        "NASDAQ": "^IXIC",
-        "Nifty 50": "^NSEI",
-        "Sensex": "^BSESN",
-        "Russell 2000": "^RUT"
-    }
+    if country and country.lower() == 'india':
+        # India-focused indices
+        indices = {
+            "Nifty 50": "^NSEI",
+            "Sensex": "^BSESN",
+            "Nifty Bank": "^NSEBANK",
+            "Nifty IT": "^CNXIT",
+            "Nifty Auto": "^CNXAUTO",
+            "India VIX": "^INDIAVIX"
+        }
+    else:
+        # US/Global indices
+        indices = {
+            "S&P 500": "^GSPC",
+            "Dow Jones": "^DJI",
+            "NASDAQ": "^IXIC",
+            "Russell 2000": "^RUT",
+            "VIX": "^VIX"
+        }
     
     for name, symbol in indices.items():
         try:
@@ -580,15 +783,27 @@ def get_market_data_for_analysis():
     return market_data
 
 # Get current sector performance
-def get_sector_performance():
-    sectors = {
-        "Technology": ["AAPL", "MSFT", "GOOGL"],
-        "Finance": ["JPM", "BAC", "GS"],
-        "Healthcare": ["JNJ", "PFE", "UNH"],
-        "Consumer": ["AMZN", "WMT", "PG"],
-        "Energy": ["XOM", "CVX", "COP"],
-        "Industrial": ["GE", "BA", "CAT"]
-    }
+def get_sector_performance(country=None):
+    if country and country.lower() == 'india':
+        # India sectors with representative stocks
+        sectors = {
+            "IT": ["TCS.NS", "INFY.NS", "WIPRO.NS"],
+            "Banking": ["HDFCBANK.NS", "SBIN.NS", "ICICIBANK.NS"],
+            "Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS"],
+            "Auto": ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS"],
+            "Energy": ["RELIANCE.NS", "ONGC.NS", "NTPC.NS"],
+            "FMCG": ["HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS"]
+        }
+    else:
+        # US sectors with representative stocks
+        sectors = {
+            "Technology": ["AAPL", "MSFT", "GOOGL"],
+            "Finance": ["JPM", "BAC", "GS"],
+            "Healthcare": ["JNJ", "PFE", "UNH"],
+            "Consumer": ["AMZN", "WMT", "PG"],
+            "Energy": ["XOM", "CVX", "COP"],
+            "Industrial": ["GE", "BA", "CAT"]
+        }
     
     results = {}
     
@@ -615,605 +830,290 @@ def get_sector_performance():
     
     return results
 
-# Enhanced function to call OpenAI API with natural language market analysis support
-def get_openai_response(user_message):
-    global openai_api_available
-    
-    # First, check if this is a recommendation request
-    if is_recommendation_request(user_message):
-        symbol = extract_symbol_from_recommendation(user_message)
-        if symbol:
-            app.logger.info(f"Identified recommendation request for symbol: {symbol}")
-            # Get stock info with recommendation
-            stock_info = get_specific_stock_info(symbol, include_recommendation=True)
-            if stock_info:
-                return stock_info
-    
-    # Check if this is a natural language market analysis request
-    if is_natural_language_market_analysis(user_message):
-        app.logger.info("Detected natural language market analysis request")
-        
-        # Gather comprehensive market data
-        economic_data = get_economic_indicators()
-        policy_data = get_policy_shifts()
-        market_indices = get_market_data_for_analysis()
-        sectors = get_sector_performance()
-        
-        # Create market indices summaries
-        indices_summary = ""
-        for name, data in market_indices.items():
-            direction = "up" if data['change'] >= 0 else "down"
-            emoji = "📈" if data['change'] >= 0 else "📉"
-            indices_summary += f"{emoji} {name}: {data['price']:.2f} ({direction} {abs(data['percent_change']):.2f}%)\n"
-        
-        # Create sector performance summary
-        sector_summary = ""
-        for sector, data in sectors.items():
-            emoji = "🟢" if data['direction'] == "up" else "🔴"
-            sector_summary += f"{emoji} {sector}: {data['change']:.2f}% ({data['strength']} {data['direction']})\n"
-        
-        # Create mock market news summaries since we've removed the news functionality
-        news_summaries = """
-        - S&P 500 gains momentum as tech sector rallies
-        - Federal Reserve signals cautious approach to interest rates
-        - Global markets respond to economic data releases
-        - Earnings season shows mixed results across industries
-        - Renewable energy stocks see increased investor interest
-        """
-        
-        # Build enhanced system message with comprehensive market context
-        system_message = (
-            "You are an AI assistant specialized in market analysis and financial trends. "
-            "You provide detailed, professional insights based on current market data. "
-            "Use the following data to provide detailed insights in response to the user's query:\n\n"
-            f"## Market Indices\n{indices_summary}\n"
-            f"## Sector Performance\n{sector_summary}\n"
-            f"## Market News Headlines\n{news_summaries}\n"
-            f"## Economic Indicators\n{economic_data}\n"
-            f"## Policy Shifts\n{policy_data}\n\n"
-            "Provide a clear, concise, and insightful analysis based on the user's query. "
-            "Include specific data points where relevant, and present a balanced view of market conditions. "
-            "Conclude with potential implications for investors, but avoid making specific investment recommendations."
-        )
-        
-        data = {
-            "model": "gpt-3.5-turbo",
-            "messages": [
-                {"role": "system", "content": system_message},
-                {"role": "user", "content": user_message}
-            ],
-            "max_tokens": 400
-        }
-        
-        url = f"{openai_api_base}/chat/completions"
-        
-        # Headers for project-based API keys (sk-proj-*)
-        if api_key.startswith('sk-proj-'):
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}",
-            }
-        else:
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
-            }
-        
-        try:
-            app.logger.info(f"Calling OpenAI API for market analysis with URL: {url}")
-            response = requests.post(url, headers=headers, json=data, timeout=15)
-            
-            app.logger.info(f"OpenAI API response status: {response.status_code}")
-            
-            if response.status_code != 200:
-                app.logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
-                openai_api_available = False
-                return generate_local_response(user_message)
-            
-            openai_api_available = True
-            result = response.json()
-            return result["choices"][0]["message"]["content"]
-        except requests.exceptions.RequestException as e:
-            app.logger.error(f"OpenAI API connection error: {str(e)}")
-            openai_api_available = False
-            return generate_local_response(user_message)
-        except Exception as e:
-            app.logger.error(f"OpenAI API unexpected error: {str(e)}")
-            openai_api_available = False
-            return generate_local_response(user_message)
-    
-    # If not a recommendation or market analysis request,
-    # proceed with general stock info checking
-    stock_info = check_for_stock_info(user_message)
-    if stock_info:
-        app.logger.info("Found direct stock information, returning without calling OpenAI")
-        return stock_info
-    
-    # If API was previously marked as unavailable, check if we should retry
-    if not openai_api_available:
-        app.logger.info("OpenAI API was previously unavailable, using local response")
-        return generate_local_response(user_message)
-    
-    url = f"{openai_api_base}/chat/completions"
-    
-    # Headers for project-based API keys (sk-proj-*)
-    if api_key.startswith('sk-proj-'):
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        }
-    else:
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}"
-        }
-    
-    # Add stock information to the prompt if it's about a specific stock
-    stock_info = check_for_stock_info(user_message)
-    system_message = "You are an AI assistant specialized in Indian and global stock markets, investments, and financial advice. Provide helpful, concise, and accurate information."
-    
-    if stock_info:
-        system_message += f" Here is some recent data about the requested stock: {stock_info}"
-    
-    data = {
-        "model": "gpt-3.5-turbo",
-        "messages": [
-            {"role": "system", "content": system_message},
-            {"role": "user", "content": user_message}
-        ],
-        "max_tokens": 300
-    }
-    
+# Function to generate content using Gemini API
+def generate_gemini_response(prompt, max_tokens=500):
     try:
-        app.logger.info(f"Calling OpenAI API with URL: {url}")
-        app.logger.info(f"Using headers: {headers}")
-        response = requests.post(url, headers=headers, json=data, timeout=15)
+        app.logger.info(f"Sending prompt to Gemini: {prompt[:50]}...")
         
-        # Log the response status code and detailed response for debugging
-        app.logger.info(f"OpenAI API response status: {response.status_code}")
+        # Set generation configuration
+        generation_config = {
+            'max_output_tokens': max_tokens,
+            'temperature': 0.3,
+            'top_p': 0.8,
+            'top_k': 40
+        }
         
-        if response.status_code != 200:
-            app.logger.error(f"OpenAI API error: {response.status_code} - {response.text}")
-            
-            # Check for specific error types
-            error_text = response.text.lower()
-            if response.status_code == 401 and ("invalid" in error_text and "api key" in error_text):
-                app.logger.error("Authentication failed: Invalid API key format or value")
-                openai_api_available = False
-                return "I'm having trouble with my AI capabilities right now, but I can still provide you with stock information. What stock would you like to know about?"
-            
-            openai_api_available = False
-            return generate_local_response(user_message)
+        # Generate content with proper error handling
+        response = model.generate_content(prompt, generation_config=generation_config)
         
-        # If we got here, the API is available
-        openai_api_available = True
-        
-        result = response.json()
-        return result["choices"][0]["message"]["content"]
-    except requests.exceptions.RequestException as e:
-        app.logger.error(f"OpenAI API connection error: {str(e)}")
-        openai_api_available = False
-        return generate_local_response(user_message)
+        # Check for valid response
+        if response and hasattr(response, 'text'):
+            app.logger.info("Successfully received response from Gemini")
+            return response.text
+        else:
+            app.logger.warning("Empty or invalid response from Gemini API")
+            return None
     except Exception as e:
-        app.logger.error(f"OpenAI API unexpected error: {str(e)}")
-        openai_api_available = False
-        return generate_local_response(user_message)
+        app.logger.error(f"Error calling Gemini API: {str(e)}", exc_info=True)
+        # Return a more detailed error message for debugging
+        import traceback
+        error_details = traceback.format_exc()
+        app.logger.error(f"Detailed error trace: {error_details}")
+        return None
 
-# Endpoint for chatbot interaction
+# Modify the chat endpoint to handle investment advice queries better
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         user_input = request.json.get('message')
         app.logger.info(f"Received chat request: {user_input}")
         
-        # Use our response function which handles both OpenAI and local fallback
-        reply = get_openai_response(user_input)
+        # Special handling for checking API key status
+        if "api key" in user_input.lower() and ("working" in user_input.lower() or "status" in user_input.lower()):
+            try:
+                # Test the API
+                test_prompt = "Respond with 'API is working' if you receive this message."
+                test_response = generate_gemini_response(test_prompt)
+                
+                if test_response and "API is working" in test_response:
+                    return jsonify("Yes, your Google Gemini API key is working correctly! You can use the full functionality of the chatbot.")
+                else:
+                    return jsonify("Your API key may not be working correctly. The chatbot will still work for stock information, but AI-powered analysis might be limited.")
+            except Exception as e:
+                app.logger.error(f"Error checking API key: {str(e)}")
+                return jsonify("There was an error checking your API key status. The chatbot will still work for stock information.")
         
-        # Always return a success response - the fallback mechanism handled any API errors
-        return jsonify(reply)
+        # Check for investment advice questions
+        investment_advice_patterns = [
+            r'(good|right|best) time to (invest|buy)',
+            r'should I (invest|buy|sell)',
+            r'worth (investing|buying)',
+            r'(invest|put money) (in|into)',
+            r'good investment',
+            r'investment advice',
+            r'portfolio recommendation'
+        ]
+        
+        if any(re.search(pattern, user_input.lower()) for pattern in investment_advice_patterns):
+            app.logger.info("Detected investment advice query")
+            response = handle_investment_advice_query(user_input)
+            return jsonify(response)
+        
+        # Handle market analysis queries directly in the chat endpoint
+        if is_natural_language_market_analysis(user_input):
+            app.logger.info("Detected market analysis query in chat endpoint")
+            try:
+                # Determine if this is an India-specific query
+                is_india_query = any(term in user_input.lower() for term in ["india", "indian", "nifty", "sensex", "rbi", "bharti", "reliance"])
+                country = "india" if is_india_query else "us"
+                app.logger.info(f"Market analysis query for country: {country}")
+                
+                # Gather comprehensive market data
+                economic_data = get_economic_indicators(country)
+                policy_data = get_policy_shifts(country)
+                market_indices = get_market_data_for_analysis(country)
+                sectors = get_sector_performance(country)
+                
+                # Format data clearly
+                data = f"## Market Data Summary for {country.upper()}\n\n"
+                
+                # Add market indices
+                data += "### Market Indices\n"
+                for name, info in market_indices.items():
+                    direction = "up" if info['change'] >= 0 else "down"
+                    emoji = "📈" if info['change'] >= 0 else "📉"
+                    data += f"{emoji} {name}: {info['price']:.2f} ({direction} {abs(info['percent_change']):.2f}%)\n"
+                
+                # Add sector performance
+                data += "\n### Sector Performance\n"
+                for sector, info in sectors.items():
+                    emoji = "🟢" if info['direction'] == "up" else "🔴"
+                    data += f"{emoji} {sector}: {info['change']:.2f}% ({info['strength']} {info['direction']})\n"
+                
+                # Add economic indicators and policy information
+                data += f"\n### Economic Indicators\n{economic_data}\n"
+                data += f"\n### Policy Updates\n{policy_data}\n"
+                
+                # Try to get AI analysis with a better prompt
+                try:
+                    prompt = f"""You are a financial market analyst. Based on this data about {country} markets:
+{data}
+
+Please provide a thorough analysis addressing this question: {user_input}
+
+Focus only on the factual data provided. Format your response with clear headings, bullet points, and use emojis for readability."""
+                    
+                    ai_analysis = generate_gemini_response(prompt)
+                    
+                    if ai_analysis:
+                        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+                        return jsonify(f"{ai_analysis}\n\n**Source Data (as of {timestamp}):**\n{data}")
+                except Exception as ai_error:
+                    app.logger.error(f"Error getting AI analysis: {str(ai_error)}")
+                
+                # Basic analysis as fallback
+                if is_india_query:
+                    india_indices = ["Nifty 50", "Sensex", "Nifty Bank"]
+                    india_trend = ""
+                    
+                    for idx in india_indices:
+                        if idx in market_indices:
+                            direction = "positive" if market_indices[idx]['change'] >= 0 else "negative"
+                            magnitude = abs(market_indices[idx]['percent_change'])
+                            if magnitude < 0.5:
+                                strength = "slightly"
+                            elif magnitude < 1.0:
+                                strength = "moderately"
+                            else:
+                                strength = "strongly"
+                            
+                            india_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
+                    
+                    if india_trend:
+                        india_analysis = f"## India Market Analysis\n\n{india_trend}\n\nIT and Banking sectors are currently the key drivers of market movement. Recent RBI monetary policy and government initiatives in manufacturing are shaping market sentiment.\n\n"
+                        return jsonify(india_analysis + data)
+                elif "america" in user_input.lower() or "us" in user_input.lower() or "united states" in user_input.lower():
+                    us_indices = ["S&P 500", "Dow Jones", "NASDAQ"]
+                    us_trend = ""
+                    
+                    for idx in us_indices:
+                        if idx in market_indices:
+                            direction = "positive" if market_indices[idx]['change'] >= 0 else "negative"
+                            magnitude = abs(market_indices[idx]['percent_change'])
+                            if magnitude < 0.5:
+                                strength = "slightly"
+                            elif magnitude < 1.0:
+                                strength = "moderately"
+                            else:
+                                strength = "strongly"
+                            
+                            us_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
+                    
+                    if us_trend:
+                        us_analysis = f"## US Market Analysis\n\n{us_trend}\n\nTechnology and Finance are the key sectors influencing today's market movement. Recent economic reports show moderate inflation and steady employment figures.\n\n"
+                        return jsonify(us_analysis + data)
+                
+                # If no specific country analysis, return general data
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
+                return jsonify(f"**Market Data (as of {timestamp}):**\n{data}")
+            except Exception as analysis_error:
+                app.logger.error(f"Error in market analysis: {str(analysis_error)}")
+                return jsonify("I encountered an error analyzing market trends. Here's what I can tell you: Markets are showing mixed signals with technology and healthcare sectors performing well. Would you like information about a specific stock instead?")
+        
+        # Check for stock queries
+        stock_symbol, stock_text = check_for_stock_info(user_input, for_chat=True)
+        if stock_symbol:
+            try:
+                # Get factual data from Yahoo Finance
+                stock_info = get_specific_stock_info(stock_symbol)
+                if stock_info:
+                    # Try to get AI analysis
+                    try:
+                        prompt = f"""You are a financial expert. Based on this stock data:
+{stock_info}
+
+Provide a brief, factual analysis of {stock_symbol}. Focus on the current price, recent performance, and key metrics. Be concise and objective. Do not give investment advice."""
+
+                        ai_analysis = generate_gemini_response(prompt)
+                        
+                        if ai_analysis:
+                            return jsonify(f"{stock_info}\n\n**AI Analysis:**\n{ai_analysis}")
+                    except Exception as ai_error:
+                        app.logger.error(f"Error getting AI analysis for stock: {str(ai_error)}")
+                    
+                    return jsonify(stock_info)
+                else:
+                    return jsonify(f"I couldn't find information for {stock_text}. For Indian stocks, you might need to be more specific or add the .NS suffix.")
+            except Exception as stock_error:
+                app.logger.error(f"Error fetching stock info: {str(stock_error)}")
+                return jsonify(f"I had trouble getting information for {stock_text}. Please try again later or try another stock symbol.")
+        
+        # For all other queries
+        try:
+            # Try to get AI response for general query
+            prompt = f"""You are an AI assistant specialized in financial markets and investments. 
+Your knowledge is focused on explaining financial concepts, market mechanics, and investment principles.
+Provide helpful, concise, and accurate information about this financial question: "{user_input}"
+Do not give specific investment advice or recommendations."""
+            
+            ai_response = generate_gemini_response(prompt)
+            
+            if ai_response:
+                return jsonify(ai_response)
+            
+            # Fallback for general queries
+            if is_recommendation_request(user_input):
+                return jsonify("I can provide factual information about stocks, but I cannot make investment recommendations. To get information about a specific stock, please ask about it directly, like 'What's the current price of MSFT?' or 'Tell me about Apple stock.'")
+            elif any(greeting in user_input.lower() for greeting in ['hello', 'hi', 'hey', 'greetings']):
+                return jsonify("Hello! I'm your AI Investment Assistant. I can help you with stock information and market analysis. What would you like to know about?")
+            else:
+                return jsonify(generate_local_response(user_input))
+        except Exception as general_error:
+            app.logger.error(f"Error handling general query: {str(general_error)}")
+            return jsonify("I'm currently experiencing technical difficulties with advanced queries. Please try asking about a specific stock (like 'TATAMOTORS.NS' or 'MSFT') instead.")
     except Exception as e:
         error_msg = str(e)
         app.logger.error(f"Unexpected error in chat endpoint: {error_msg}")
-        return jsonify("I'm currently experiencing technical difficulties. Please try again."), 500
+        return jsonify("I'm currently experiencing technical difficulties. Please try asking about a specific stock instead.")
 
-# Diagnostic endpoint to check API status
+# Update the API status endpoint
 @app.route('/api-status', methods=['GET'])
 def api_status():
     try:
-        # Simple test call to the OpenAI API
-        url = f"{openai_api_base}/models"
+        # Test the API with a simple prompt
+        response = generate_gemini_response("Hello, respond with 'API is working' if you receive this message.")
         
-        # Use the appropriate headers based on API key format
-        if api_key.startswith('sk-proj-'):
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {api_key}"
-                # Add organization ID if needed
-            }
+        if response and "API is working" in response:
+            app.logger.info("API status check: successful")
+            return jsonify({
+                "status": "operational", 
+                "code": 200, 
+                "message": "Gemini API is working correctly",
+                "model": "gemini-1.5-pro",
+                "api_key": f"{api_key[:5]}...{api_key[-5:]}"
+            })
         else:
-            headers = {
-                "Authorization": f"Bearer {api_key}"
-            }
-            
-        app.logger.info(f"Testing API with headers: {headers}")
-        response = requests.get(url, headers=headers, timeout=5)
-        
-        if response.status_code == 200:
-            return jsonify({"status": "operational", "code": response.status_code})
-        else:
-            # Return detailed error information
+            app.logger.warning("API status check: response received but invalid content")
             error_info = {
                 "status": "error", 
-                "code": response.status_code, 
-                "message": response.text
+                "code": 500, 
+                "message": "API responded, but did not return the expected message",
+                "response": response if response else "No response",
+                "model": "gemini-1.5-pro"
             }
-            
-            # If it's an authentication error, add a hint
-            if response.status_code == 401:
-                error_info["hint"] = "This appears to be an authentication error. Your API key might be invalid or have the wrong format."
-                
             return jsonify(error_info)
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        app.logger.error(f"API status check: failed with error: {str(e)}")
+        return jsonify({
+            "status": "error", 
+            "code": 500,
+            "message": str(e),
+            "model": "gemini-1.5-pro",
+            "api_key_prefix": api_key[:5]
+        })
 
-# User-friendly API status page
-@app.route('/status', methods=['GET'])
-def status_page():
-    html = """
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Chatbot API Status</title>
-        <style>
-            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-            .status-box { padding: 20px; margin: 20px 0; border-radius: 5px; }
-            .operational { background-color: #d4edda; color: #155724; }
-            .error { background-color: #f8d7da; color: #721c24; }
-            pre { background-color: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
-            .hint { margin-top: 10px; padding: 10px; background-color: #fff3cd; color: #856404; border-radius: 5px; }
-        </style>
-    </head>
-    <body>
-        <h1>Chatbot API Status</h1>
-        <div id="status-container">Loading status...</div>
-        
-        <script>
-            fetch('/api-status')
-                .then(response => response.json())
-                .then(data => {
-                    const container = document.getElementById('status-container');
-                    if (data.status === 'operational') {
-                        container.innerHTML = `
-                            <div class="status-box operational">
-                                <h2>✅ API is operational</h2>
-                                <p>Status code: ${data.code}</p>
-                            </div>
-                        `;
-                    } else {
-                        let html = `
-                            <div class="status-box error">
-                                <h2>❌ API error</h2>
-                                <p>Status code: ${data.code}</p>
-                                <p>Error details:</p>
-                                <pre>${data.message}</pre>
-                            </div>
-                        `;
-                        
-                        if (data.hint) {
-                            html += `<div class="hint"><strong>Hint:</strong> ${data.hint}</div>`;
-                        }
-                        
-                        html += `
-                            <h2>Using the Chatbot Without OpenAI</h2>
-                            <p>Your chatbot will still work for stock-related queries, as it uses Yahoo Finance for that data.</p>
-                            <p>Try asking questions about stock prices, like:</p>
-                            <ul>
-                                <li>"What's the price of AAPL?"</li>
-                                <li>"How much is Tesla stock worth?"</li>
-                                <li>"Tell me about Microsoft"</li>
-                                <li>"RELIANCE.NS"</li>
-                            </ul>
-                        `;
-                        
-                        container.innerHTML = html;
-                    }
-                })
-                .catch(error => {
-                    document.getElementById('status-container').innerHTML = `
-                        <div class="status-box error">
-                            <h2>❌ Connection error</h2>
-                            <p>Could not connect to the status endpoint: ${error.message}</p>
-                        </div>
-                    `;
-                });
-        </script>
-    </body>
-    </html>
-    """
-    return html
-
-# Add a new endpoint for direct stock recommendations
-@app.route('/recommend-stock', methods=['POST'])
-def recommend_stock():
+# Handle investment advice queries
+def handle_investment_advice_query(query):
     try:
-        symbol = request.json.get('symbol', '').strip()
-        if not symbol:
-            return jsonify({"error": "Please provide a stock symbol"}), 400
-            
-        # Try to get recommendation
-        stock_info = get_specific_stock_info(symbol, include_recommendation=True)
-        if stock_info:
-            return jsonify({"result": stock_info})
+        # Create a prompt that focuses on market analysis rather than direct advice
+        prompt = f"""You are a financial analyst providing educational information only, not investment advice. 
+Based on this query: "{query}"
+
+Provide factual market information and educational context that might be relevant.
+Always clarify that you're not giving personal investment advice.
+Focus on explaining market trends, fundamentals, and educational aspects.
+Use clear headings, bullet points, and include relevant data points."""
+        
+        response = generate_gemini_response(prompt)
+        
+        if response:
+            disclaimer = "\n\n**Disclaimer**: This is educational information only and not personalized investment advice. Always do your own research and consider consulting with a financial advisor before making investment decisions."
+            return response + disclaimer
         else:
-            # Try common variations as you do in search-stock
-            return jsonify({"error": f"Could not find stock information for '{symbol}'. Try adding an exchange extension (like .NS for Indian stocks) or check if the symbol is correct."}), 404
+            return "I can provide factual market information, but cannot offer personalized investment advice. Would you like to know about specific market trends or stocks instead?"
     except Exception as e:
-        app.logger.error(f"Error in stock recommendation: {str(e)}")
-        return jsonify({"error": "An error occurred while analyzing the stock"}), 500
-
-# Endpoint to get news for a specific stock
-# @app.route('/stock-news', methods=['GET'])
-# def stock_news():
-#     """Endpoint to get news for a specific stock symbol"""
-#     try:
-#         symbol = request.args.get('symbol')
-#         limit = int(request.args.get('limit', 3))
-#         
-#         if not symbol:
-#             return jsonify({"error": "No stock symbol provided"}), 400
-#             
-#         # News functionality has been removed
-#         return jsonify({"news": []}), 404
-#     except Exception as e:
-#         app.logger.error(f"Error in news endpoint: {str(e)}")
-#         return jsonify({"error": "An error occurred while fetching news"}), 500
-
-# Function to check for stock information in the query
-def check_for_stock_info(query):
-    query = query.lower()
-    
-    # Check if this is a recommendation request
-    want_recommendation = is_recommendation_request(query)
-    
-    # Define common patterns for stock price queries
-    price_patterns = [
-        r'(?:price|value|worth|stock|how (?:much|is)|what\'s|whats|what is).+?([a-zA-Z0-9&\^\._ ]+)(?:\s|$|stock|price|\?)',
-        r'(?:tell|information|info|details|data).+?(?:about|on|for) ([a-zA-Z0-9&\^\._ ]+)(?:\s|$|\?)',
-        r'(^[a-zA-Z0-9\.]+$)',  # Single word that might be a stock symbol
-        r'search (?:for )?([a-zA-Z0-9&\^\._ ]+)'  # Direct search request
-    ]
-    
-    # Add recommendation patterns if this is a recommendation request
-    if want_recommendation:
-        price_patterns.extend([
-            r'(?:should i (?:buy|invest in|sell)|recommend) ([a-zA-Z0-9&\^\._ ]+)',
-            r'(?:is|think about) ([a-zA-Z0-9&\^\._ ]+) (?:a good investment|worth buying|good stock)'
-        ])
-    
-    # Try to extract potential stock symbols
-    potential_symbols = []
-    
-    # Check all patterns
-    for pattern in price_patterns:
-        matches = re.findall(pattern, query)
-        if matches:
-            for match in matches:
-                if isinstance(match, tuple):
-                    for group in match:
-                        if group and len(group) > 0:
-                            potential_symbols.append(group)
-                else:
-                    if match and len(match) > 0:
-                        potential_symbols.append(match)
-    
-    # Add specific handling for exact matches on known stock symbols
-    known_stocks = {
-        'RELIANCE.NS': 'Reliance Industries',
-        'TCS.NS': 'Tata Consultancy Services', 
-        'HDFCBANK.NS': 'HDFC Bank',
-        'INFY.NS': 'Infosys',
-        'SBIN.NS': 'State Bank of India',
-        'ICICIBANK.NS': 'ICICI Bank',
-        'AIRTELPP.NS': 'Bharti Airtel Partly Paid',
-        'BHARTIARTL.NS': 'Bharti Airtel',
-        'ADANIPORTS.NS': 'Adani Ports',
-        'TATAMOTORS.NS': 'Tata Motors',
-        'AAPL': 'Apple',
-        'MSFT': 'Microsoft',
-        'AMZN': 'Amazon',
-        'GOOGL': 'Alphabet (Google)',
-        'TSLA': 'Tesla',
-        'META': 'Meta Platforms (Facebook)',
-        'NFLX': 'Netflix',
-        'JPM': 'JPMorgan Chase',
-        'V': 'Visa',
-        'DIS': 'Disney'
-    }
-    
-    # Check if the query directly contains a known stock symbol
-    for ticker in known_stocks.keys():
-        if ticker.lower() in query.lower():
-            app.logger.info(f"Found direct match for known stock: {ticker}")
-            stock_info = get_specific_stock_info(ticker)
-            if stock_info:
-                return stock_info
-    
-    # Extract any potential stock symbols (words that look like tickers)
-    words = re.findall(r'\b[A-Za-z0-9\.]+\b', query)
-    for word in words:
-        if (len(word) >= 2 and len(word) <= 10) or '.' in word:
-            potential_symbols.append(word)
-    
-    # Common stock mapping for well-known companies
-    stock_mapping = {
-        "apple": "AAPL",
-        "microsoft": "MSFT", 
-        "google": "GOOGL",
-        "alphabet": "GOOGL",
-        "amazon": "AMZN",
-        "tesla": "TSLA",
-        "meta": "META", 
-        "facebook": "META",
-        "netflix": "NFLX",
-        "nvidia": "NVDA",
-        "hdfc bank": "HDFCBANK.NS",
-        "reliance": "RELIANCE.NS",
-        "tata": "TCS.NS",
-        "infosys": "INFY.NS",
-        "state bank": "SBIN.NS",
-        "sbi": "SBIN.NS",
-        "airtel": "BHARTIARTL.NS",
-        "airtel partly paid": "AIRTELPP.NS",
-        "bharti airtel": "BHARTIARTL.NS",
-        "bharti airtel partly paid": "AIRTELPP.NS",
-        "s&p": "^GSPC",
-        "s&p 500": "^GSPC",
-        "dow": "^DJI",
-        "dow jones": "^DJI",
-        "nasdaq": "^IXIC",
-        "nifty": "^NSEI",
-        "nifty 50": "^NSEI",
-        "sensex": "^BSESN"
-    }
-    
-    # Remove duplicates and sort by length (shorter symbols are more likely to be valid tickers)
-    potential_symbols = list(set(potential_symbols))
-    potential_symbols.sort(key=len)
-    
-    app.logger.info(f"Potential stock symbols extracted: {potential_symbols}")
-    
-    # Clean up symbols and try them
-    for symbol in potential_symbols:
-        # Clean the symbol
-        clean_symbol = symbol.strip().upper()
-        clean_symbol = re.sub(r'(STOCK|PRICE|\?|OF|THE|FOR)$', '', clean_symbol).strip()
-        
-        # Skip very common words that might be extracted but aren't likely to be stocks
-        if clean_symbol.lower() in ['a', 'the', 'and', 'or', 'of', 'to', 'for', 'in', 'on', 'by', 'all', 'any']:
-            continue
-            
-        # Check if this matches known mappings
-        symbol_key = clean_symbol.lower()
-        if symbol_key in stock_mapping:
-            ticker_to_try = stock_mapping[symbol_key]
-            app.logger.info(f"Found mapping for {clean_symbol}: {ticker_to_try}")
-            
-            # Try to get stock info with recommendation if requested
-            stock_info = get_specific_stock_info(ticker_to_try, include_recommendation=want_recommendation)
-            if stock_info:
-                return stock_info
-        
-        # Try different exchange variations
-        exchange_variations = [
-            '',         # Raw symbol
-            '.NS',      # India NSE
-            '.BO',      # India BSE
-            '.L',       # London
-            '.PA',      # Euronext Paris
-            '.F',       # Frankfurt
-            '.TO',      # Toronto
-            '.AX',      # Australian Securities Exchange
-            '.SA',      # Sao Paulo Stock Exchange
-            '.T',       # Tokyo Stock Exchange
-            '.HK',      # Hong Kong Stock Exchange
-            '.SZ',      # Shenzhen Stock Exchange
-            '.SS',      # Shanghai Stock Exchange
-            '.SW',      # Swiss Exchange
-            '-USD',     # Cryptocurrency format
-            '.SI',      # Singapore Exchange
-            '.JK',      # Jakarta Stock Exchange
-            '.KS',      # Korea Stock Exchange
-            '.KL',      # Kuala Lumpur Stock Exchange
-            '.V',       # TSX Venture Exchange (Canada)
-            '.MX',      # Mexico Stock Exchange
-            '.ST',      # Stockholm Stock Exchange
-            '.CO',      # Copenhagen Stock Exchange
-            '.OL',      # Oslo Stock Exchange
-            '.NZ',      # New Zealand Stock Exchange
-            '.BR',      # Brussels Stock Exchange
-            '.MC',      # Madrid Stock Exchange
-            '.AT',      # Athens Stock Exchange
-            '.VI',      # Vienna Stock Exchange
-        ]
-        
-        # Index prefix for major indices
-        if len(clean_symbol) <= 5:
-            exchange_variations.append('^' + clean_symbol)  # Index format like ^GSPC
-        
-        # Try the raw symbol first
-        if '.' not in clean_symbol:
-            stock_info = get_specific_stock_info(clean_symbol, include_recommendation=want_recommendation)
-            if stock_info:
-                return stock_info
-                
-        # Try various exchanges - only if the symbol doesn't already have a suffix
-        if '.' not in clean_symbol and '-' not in clean_symbol:
-            for exchange in exchange_variations:
-                variation = clean_symbol + exchange
-                app.logger.info(f"Trying stock symbol with exchange: {variation}")
-                stock_info = get_specific_stock_info(variation, include_recommendation=want_recommendation)
-                if stock_info:
-                    return stock_info
-                    
-        # If the symbol already has a suffix (like .NS) try it directly
-        elif '.' in clean_symbol:
-            stock_info = get_specific_stock_info(clean_symbol, include_recommendation=want_recommendation)
-            if stock_info:
-                return stock_info
-                
-        # Try removing spaces (for multi-word names)
-        if ' ' in clean_symbol:
-            no_spaces = clean_symbol.replace(' ', '')
-            stock_info = get_specific_stock_info(no_spaces, include_recommendation=want_recommendation)
-            if stock_info:
-                return stock_info
-                
-            # Try with exchanges
-            for exchange in exchange_variations:
-                if exchange:  # Skip empty exchange
-                    variation = no_spaces + exchange
-                    app.logger.info(f"Trying no-space symbol with exchange: {variation}")
-                    stock_info = get_specific_stock_info(variation, include_recommendation=want_recommendation)
-                    if stock_info:
-                        return stock_info
-    
-    return None
-
-# Endpoint for direct stock search
-@app.route('/search-stock', methods=['POST'])
-def search_stock():
-    try:
-        symbol = request.json.get('symbol', '').strip()
-        if not symbol:
-            return jsonify({"error": "Please provide a stock symbol"}), 400
-            
-        # Try to get info
-        stock_info = get_specific_stock_info(symbol)
-        if stock_info:
-            return jsonify({"result": stock_info})
-        else:
-            # Try with common exchange extensions
-            exchange_extensions = [
-                '.NS',      # India NSE
-                '.BO',      # India BSE
-                '.L',       # London
-                '.PA',      # Paris
-                '.F',       # Frankfurt
-                '.TO',      # Toronto
-                '^'         # Index prefix
-            ]
-            
-            for ext in exchange_extensions:
-                if '.' not in symbol and '^' not in symbol:  # Only if it doesn't already have an extension
-                    var = symbol + ext if ext != '^' else '^' + symbol
-                    info = get_specific_stock_info(var)
-                    if info:
-                        return jsonify({"result": info})
-                        
-            return jsonify({"error": f"Could not find stock information for '{symbol}'. Try adding an exchange extension (like .NS for Indian stocks) or check if the symbol is correct."}), 404
-    except Exception as e:
-        app.logger.error(f"Error in stock search: {str(e)}")
-        return jsonify({"error": "An error occurred while searching for the stock"}), 500
+        app.logger.error(f"Error handling investment advice query: {str(e)}")
+        return "I'm currently experiencing difficulties with providing detailed market analysis. Would you like me to provide information about a specific stock instead?"
 
 # Run the app
 if __name__ == '__main__':

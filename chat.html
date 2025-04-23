@@ -775,7 +775,22 @@
 
                 const data = await response.json();
                 hideTypingIndicator();
-                addBotMessage(data);
+                
+                // Check if data is a string (normal response)
+                if (typeof data === 'string') {
+                    addBotMessage(data);
+                } else if (data && typeof data === 'object') {
+                    // Handle object responses (just in case API returns an object)
+                    try {
+                        const formattedResponse = JSON.stringify(data, null, 2);
+                        addBotMessage(formattedResponse);
+                    } catch (e) {
+                        console.warn('Could not stringify object response:', e);
+                        addBotMessage(String(data));
+                    }
+                } else {
+                    addBotMessage("I received an unexpected response format. Please try again.");
+                }
             } catch (error) {
                 console.error('Error sending message:', error);
                 hideTypingIndicator();
@@ -783,68 +798,104 @@
             }
         }
 
-        // Parse price limit and currency from user message, return object or null if not found
+        // Parse message for price limit requests
         function parsePriceLimit(message) {
-            // Regex to find patterns like "under 500 rupees", "below $1000", "less than 2000 rs"
-            const regex = /(?:under|below|less than|underneath|within)\s*(₹|\$)?\s*(\d{1,6})(?:\s*(?:rupees|rs|₹|\$))?/i;
-            const match = message.match(regex);
-            if (match && match[2]) {
-                return {
-                    price: parseInt(match[2], 10),
-                    currency: match[1] || '₹' // Default to INR if no symbol
-                };
+            // Match patterns like "stocks under $100" or "shares below 50 USD" or "stocks under ₹500"
+            const patterns = [
+                /stocks?\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /shares?\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /companies\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /equities\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                // Additional patterns for price recommendations
+                /recommend\s+(?:stocks?|shares?|companies|equities)\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /what\s+(?:stocks?|shares?|companies|equities)\s+(?:are|can\s+I\s+(?:buy|get))\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /show\s+me\s+(?:stocks?|shares?|companies|equities)\s+(?:under|below|less\s+than)\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i
+            ];
+
+            // Patterns for stock limit orders (buy/sell at specific price)
+            const limitOrderPatterns = [
+                /(?:buy|purchase)\s+([A-Za-z0-9\s\.]+)\s+(?:at|when\s+it\s+(?:hits|reaches))\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /(?:sell)\s+([A-Za-z0-9\s\.]+)\s+(?:at|when\s+it\s+(?:hits|reaches))\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i,
+                /(?:set|create)\s+(?:a)?\s+(?:buy|sell)\s+(?:order|limit)\s+(?:for)?\s+([A-Za-z0-9\s\.]+)\s+(?:at|when\s+it\s+(?:hits|reaches))\s+[$₹£€]?(\d+(?:\.\d+)?)\s*(?:USD|INR|GBP|EUR)?/i
+            ];
+
+            // Check for currency symbols to determine currency
+            let currency = '$'; // Default to USD
+            if (message.includes('₹') || /\bINR\b/i.test(message) || /\brupees?\b/i.test(message)) {
+                currency = '₹';
+            } else if (message.includes('£') || /\bGBP\b/i.test(message) || /\bpounds?\b/i.test(message)) {
+                currency = '£';
+            } else if (message.includes('€') || /\bEUR\b/i.test(message) || /\beuros?\b/i.test(message)) {
+                currency = '€';
             }
+
+            // Check for price limit requests (stocks under X price)
+            for (const pattern of patterns) {
+                const match = message.match(pattern);
+                if (match && match[1]) {
+                    const price = parseFloat(match[1]);
+                    if (!isNaN(price)) {
+                        return { type: 'priceLimit', price, currency };
+                    }
+                }
+            }
+
+            // Check for limit order requests (buy/sell at X price)
+            for (const pattern of limitOrderPatterns) {
+                const match = message.match(pattern);
+                if (match && match[1] && match[2]) {
+                    const stockName = match[1].trim();
+                    const price = parseFloat(match[2]);
+                    if (!isNaN(price)) {
+                        const orderType = message.toLowerCase().includes('buy') ? 'buy' : 'sell';
+                        return { 
+                            type: 'limitOrder', 
+                            stockName, 
+                            price, 
+                            currency,
+                            orderType
+                        };
+                    }
+                }
+            }
+            
             return null;
         }
 
-        // Fetch stock prices and filter stocks under the price limit with currency conversion
-        async function getStocksUnderPrice(priceLimitObj) {
-            const stocksToCheck = stocks; // stocks array defined earlier in the script
-            const results = [];
-            const USD_TO_INR = 82; // Fixed conversion rate
-            const INR_TO_USD = 1 / USD_TO_INR;
-
-            // Fetch stock data for each stock symbol sequentially (can be optimized)
-            for (const stock of stocksToCheck) {
-                try {
-                    const response = await fetch(`/stock?ticker=${stock.symbol}`);
-                    if (!response.ok) {
-                        console.warn(`Failed to fetch data for ${stock.symbol}`);
-                        continue;
-                    }
-                    const data = await response.json();
-                    if (data && data.Close) {
-                        const closeValues = Object.values(data.Close);
-                        if (closeValues.length > 0) {
-                            let lastPrice = closeValues[0];
-                            // Convert price based on query currency and stock type
-                            if (priceLimitObj.currency === '₹') {
-                                // Query in INR
-                                if (!stock.symbol.endsWith('.NS')) {
-                                    // Convert USD price to INR
-                                    lastPrice = lastPrice * USD_TO_INR;
-                                }
-                            } else if (priceLimitObj.currency === '$') {
-                                // Query in USD
-                                if (stock.symbol.endsWith('.NS')) {
-                                    // Convert INR price to USD
-                                    lastPrice = lastPrice * INR_TO_USD;
-                                }
-                            }
-                            if (lastPrice <= priceLimitObj.price) {
-                                results.push({
-                                    symbol: stock.symbol,
-                                    name: stock.name,
-                                    price: lastPrice
-                                });
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.warn(`Error fetching data for ${stock.symbol}:`, error);
-                }
-            }
-            return results;
+        // Mock function to get stocks under a certain price
+        async function getStocksUnderPrice({ price, currency }) {
+            // This is a mock implementation - in a real application, this would call an API
+            const mockStocks = [
+                // USD stocks
+                { name: "Company A", symbol: "COMPA", price: 45.67, currency: '$' },
+                { name: "Company B", symbol: "COMPB", price: 78.90, currency: '$' },
+                { name: "Company C", symbol: "COMPC", price: 23.45, currency: '$' },
+                { name: "Company D", symbol: "COMPD", price: 67.89, currency: '$' },
+                { name: "Company E", symbol: "COMPE", price: 12.34, currency: '$' },
+                
+                // INR stocks
+                { name: "Indian Company A", symbol: "INDA", price: 456.78, currency: '₹' },
+                { name: "Indian Company B", symbol: "INDB", price: 789.01, currency: '₹' },
+                { name: "Indian Company C", symbol: "INDC", price: 234.56, currency: '₹' },
+                { name: "Indian Company D", symbol: "INDD", price: 678.90, currency: '₹' },
+                { name: "Indian Company E", symbol: "INDE", price: 123.45, currency: '₹' },
+                
+                // GBP stocks
+                { name: "British Company A", symbol: "GBPA", price: 45.67, currency: '£' },
+                { name: "British Company B", symbol: "GBPB", price: 78.90, currency: '£' },
+                { name: "British Company C", symbol: "GBPC", price: 23.45, currency: '£' },
+                
+                // EUR stocks
+                { name: "European Company A", symbol: "EURA", price: 45.67, currency: '€' },
+                { name: "European Company B", symbol: "EURB", price: 78.90, currency: '€' },
+                { name: "European Company C", symbol: "EURC", price: 23.45, currency: '€' }
+            ];
+            
+            // Filter stocks by currency and price
+            return mockStocks
+                .filter(stock => stock.currency === currency && stock.price < price)
+                .sort((a, b) => b.price - a.price) // Sort by price (highest first)
+                .slice(0, 5); // Limit to top 5 results
         }
 
         // Handle send button click
