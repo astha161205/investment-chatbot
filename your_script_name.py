@@ -941,13 +941,20 @@ def chat():
 
 Please provide a thorough analysis addressing this question: {user_input}
 
-Focus only on the factual data provided. Format your response with clear headings, bullet points, and use emojis for readability."""
+Important instructions:
+1. Include all relevant data points from the provided information in your analysis
+2. Format your response with clear headings, bullet points, and use emojis for readability
+3. Your analysis should be complete and standalone without needing to show the raw data
+4. Summarize key metrics from the raw data within your analysis text
+5. Focus on trends, patterns, and implications
+"""
                     
                     ai_analysis = generate_gemini_response(prompt)
                     
                     if ai_analysis:
                         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-                        return jsonify(f"{ai_analysis}\n\n**Source Data (as of {timestamp}):**\n{data}")
+                        # Return just the AI analysis without the raw source data
+                        return jsonify(f"{ai_analysis}")
                 except Exception as ai_error:
                     app.logger.error(f"Error getting AI analysis: {str(ai_error)}")
                 
@@ -970,8 +977,8 @@ Focus only on the factual data provided. Format your response with clear heading
                             india_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
                     
                     if india_trend:
-                        india_analysis = f"## India Market Analysis\n\n{india_trend}\n\nIT and Banking sectors are currently the key drivers of market movement. Recent RBI monetary policy and government initiatives in manufacturing are shaping market sentiment.\n\n"
-                        return jsonify(india_analysis + data)
+                        india_analysis = f"## India Market Analysis\n\n{india_trend}\n\nIT and Banking sectors are currently the key drivers of market movement. Recent RBI monetary policy and government initiatives in manufacturing are shaping market sentiment."
+                        return jsonify(india_analysis)
                 elif "america" in user_input.lower() or "us" in user_input.lower() or "united states" in user_input.lower():
                     us_indices = ["S&P 500", "Dow Jones", "NASDAQ"]
                     us_trend = ""
@@ -990,12 +997,13 @@ Focus only on the factual data provided. Format your response with clear heading
                             us_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
                     
                     if us_trend:
-                        us_analysis = f"## US Market Analysis\n\n{us_trend}\n\nTechnology and Finance are the key sectors influencing today's market movement. Recent economic reports show moderate inflation and steady employment figures.\n\n"
-                        return jsonify(us_analysis + data)
+                        us_analysis = f"## US Market Analysis\n\n{us_trend}\n\nTechnology and Finance are the key sectors influencing today's market movement. Recent economic reports show moderate inflation and steady employment figures."
+                        return jsonify(us_analysis)
                 
-                # If no specific country analysis, return general data
+                # If no specific country analysis, return condensed data
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
-                return jsonify(f"**Market Data (as of {timestamp}):**\n{data}")
+                condensed_analysis = f"## Market Overview (as of {timestamp})\n\nMajor indices show mixed performance today. Sector analysis indicates Finance is performing well while Consumer and Industrial sectors are facing pressure."
+                return jsonify(condensed_analysis)
             except Exception as analysis_error:
                 app.logger.error(f"Error in market analysis: {str(analysis_error)}")
                 return jsonify("I encountered an error analyzing market trends. Here's what I can tell you: Markets are showing mixed signals with technology and healthcare sectors performing well. Would you like information about a specific stock instead?")
