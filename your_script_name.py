@@ -62,62 +62,6 @@ def stock():
     
     return jsonify(result)
 
-# Function to get news for a stock using Yahoo Finance
-# def get_stock_news(symbol, limit=3):
-#     try:
-#         app.logger.info(f"Fetching news for symbol: {symbol} using yfinance")
-#         stock = yf.Ticker(symbol)
-#         news = stock.news
-        
-#         app.logger.info(f"Raw news data received for {symbol}: {news}") # Log raw data
-        
-#         if not news:
-#             app.logger.info(f"No news found for {symbol} via yfinance.")
-#             return None
-            
-#         # Process the news items
-#         news_items = []
-#         app.logger.info(f"Processing {len(news)} news items for {symbol}...")
-#         for i, item in enumerate(news[:limit]):  # Limit to the requested number of items
-#             app.logger.info(f"Processing item {i}: {item}") # Log each item
-            
-#             # Format the date (provider_publish_time is usually a Unix timestamp)
-#             published_date = "Unknown date"
-#             if 'providerPublishTime' in item and item['providerPublishTime']:
-#                 try:
-#                     timestamp = item['providerPublishTime']
-#                     dt = datetime.fromtimestamp(timestamp)
-#                     published_date = dt.strftime("%b %d, %Y")
-#                 except Exception as date_err:
-#                     app.logger.warning(f"Could not parse news date for {symbol}: {date_err} (Timestamp: {item.get('providerPublishTime')})")
-#             else:
-#                 app.logger.warning(f"No providerPublishTime found for item {i} of {symbol}")
-
-#             # Check for essential fields
-#             title = item.get('title', 'No title available')
-#             link = item.get('link', '#')
-#             publisher = item.get('publisher', 'Unknown source')
-#             summary = item.get('summary', 'No summary available') # yfinance might not have summary
-
-#             if title == 'No title available' or link == '#':
-#                 app.logger.warning(f"Skipping news item {i} for {symbol} due to missing title or link.")
-#                 continue
-            
-#             # yfinance doesn't provide sentiment, so we'll set it to neutral
-#             news_items.append({
-#                 'title': title,
-#                 'summary': summary,
-#                 'url': link,
-#                 'source': publisher,
-#                 'published_date': published_date,
-#                 'sentiment': 'neutral' # Set sentiment to neutral as yfinance doesn't provide it
-#             })
-            
-#         app.logger.info(f"Finished processing news for {symbol}. Returning {len(news_items)} items.")
-#         return news_items
-#     except Exception as e:
-#         app.logger.error(f"Error fetching yfinance news for {symbol}: {str(e)}", exc_info=True) # Log traceback
-#         return None
 
 # Function to get information for a specific stock symbol
 def get_specific_stock_info(symbol, include_recommendation=True, include_news=False):
@@ -708,9 +652,57 @@ def get_economic_indicators(country=None):
     - GDP growth rate (FY 2023-24): 7.2%
     - India manufacturing PMI: 57.3
     """
+
+    # Pakistan-specific indicators
+    pakistan_indicators = """
+    - Pakistan unemployment rate: 5.8%
+    - Pakistan inflation rate (CPI): 12.3%
+    - SBP policy rate: 13.75%
+    - GDP growth rate (FY 2023-24): 3.5%
+    - Pakistan manufacturing PMI: 50.2
+    """
+
+    # China-specific indicators
+    china_indicators = """
+    - China unemployment rate: 5.5%
+    - China inflation rate (CPI): 2.3%
+    - People's Bank of China benchmark lending rate: 3.65%
+    - GDP growth rate (Q1 2024): 5.0%
+    - China manufacturing PMI: 51.2
+    """
+
+    # EU-specific indicators
+    eu_indicators = """
+    - EU unemployment rate: 6.2%
+    - EU inflation rate (CPI): 3.1%
+    - European Central Bank interest rate: 4.0%
+    - GDP growth rate (Q1 2024): 1.8%
+    - EU manufacturing PMI: 49.8
+    """
+
+    # UK-specific indicators
+    uk_indicators = """
+    - UK unemployment rate: 4.1%
+    - UK inflation rate (CPI): 5.0%
+    - Bank of England base rate: 4.25%
+    - GDP growth rate (Q1 2024): 1.5%
+    - UK manufacturing PMI: 50.5
+    """
     
-    if country and country.lower() == 'india':
-        return india_indicators
+    if country:
+        country_lower = country.lower()
+        if country_lower == 'india':
+            return india_indicators
+        elif country_lower == 'pakistan':
+            return pakistan_indicators
+        elif country_lower == 'china':
+            return china_indicators
+        elif country_lower == 'eu':
+            return eu_indicators
+        elif country_lower == 'uk':
+            return uk_indicators
+        else:
+            return us_indicators
     else:
         return us_indicators
 
@@ -731,9 +723,53 @@ def get_policy_shifts(country=None):
     - Production-Linked Incentive (PLI) schemes expanded to more sectors
     - GST Council considering rate rationalization for several product categories
     """
+
+    # Pakistan-specific policy data
+    pakistan_policy = """
+    - SBP maintained policy rate at 13.75% amid inflation concerns
+    - New trade agreements with China and Middle Eastern countries
+    - Tax reforms aimed at increasing revenue collection
+    - Energy sector subsidies under review
+    """
+
+    # China-specific policy data
+    china_policy = """
+    - People's Bank of China kept benchmark lending rate steady at 3.65%
+    - New trade agreements with ASEAN countries
+    - Environmental regulations tightened on heavy industries
+    - Expansion of digital currency pilot programs
+    """
+
+    # EU-specific policy data
+    eu_policy = """
+    - European Central Bank maintained interest rates at 4.0%
+    - New carbon emission regulations for manufacturing
+    - Trade negotiations ongoing with UK and US
+    - Expansion of green energy subsidies
+    """
+
+    # UK-specific policy data
+    uk_policy = """
+    - Bank of England kept base rate at 4.25%
+    - New tax incentives for technology startups
+    - Trade agreements with Commonwealth countries
+    - Energy price caps reviewed amid inflation concerns
+    """
     
-    if country and country.lower() == 'india':
-        return india_policy
+    if country:
+        country_lower = country.lower()
+        if country_lower == 'india':
+            return india_policy
+        elif country_lower == 'pakistan':
+            return pakistan_policy
+        elif country_lower == 'china':
+            return china_policy
+        elif country_lower == 'eu':
+            return eu_policy
+        elif country_lower == 'uk':
+            return uk_policy
+        else:
+            return us_policy
     else:
         return us_policy
 
@@ -742,18 +778,57 @@ def get_market_data_for_analysis(country=None):
     market_data = {}
     
     # Get data for key indices
-    if country and country.lower() == 'india':
-        # India-focused indices
-        indices = {
-            "Nifty 50": "^NSEI",
-            "Sensex": "^BSESN",
-            "Nifty Bank": "^NSEBANK",
-            "Nifty IT": "^CNXIT",
-            "Nifty Auto": "^CNXAUTO",
-            "India VIX": "^INDIAVIX"
-        }
+    if country:
+        country_lower = country.lower()
+        if country_lower == 'india':
+            # India-focused indices
+            indices = {
+                "Nifty 50": "^NSEI",
+                "Sensex": "^BSESN",
+                "Nifty Bank": "^NSEBANK",
+                "Nifty IT": "^CNXIT",
+                "Nifty Auto": "^CNXAUTO",
+                "India VIX": "^INDIAVIX"
+            }
+        elif country_lower == 'pakistan':
+            # Pakistan-focused indices (mock symbols, replace with actual if available)
+            indices = {
+                "KSE 100": "^KSE",
+                "KSE 30": "^KSE30",
+                "Pakistan VIX": "^PAKVIX"
+            }
+        elif country_lower == 'china':
+            # China-focused indices (mock symbols, replace with actual if available)
+            indices = {
+                "Shanghai Composite": "000001.SS",
+                "CSI 300": "000300.SS",
+                "China VIX": "^CHIVIX"
+            }
+        elif country_lower == 'eu':
+            # EU-focused indices (mock symbols, replace with actual if available)
+            indices = {
+                "Euro Stoxx 50": "^STOXX50E",
+                "DAX": "^GDAXI",
+                "FTSE 100": "^FTSE"
+            }
+        elif country_lower == 'uk':
+            # UK-focused indices
+            indices = {
+                "FTSE 100": "^FTSE",
+                "FTSE 250": "^FTMC",
+                "UK VIX": "^UKVIX"
+            }
+        else:
+            # US/Global indices
+            indices = {
+                "S&P 500": "^GSPC",
+                "Dow Jones": "^DJI",
+                "NASDAQ": "^IXIC",
+                "Russell 2000": "^RUT",
+                "VIX": "^VIX"
+            }
     else:
-        # US/Global indices
+        # Default to US/Global indices
         indices = {
             "S&P 500": "^GSPC",
             "Dow Jones": "^DJI",
@@ -784,18 +859,66 @@ def get_market_data_for_analysis(country=None):
 
 # Get current sector performance
 def get_sector_performance(country=None):
-    if country and country.lower() == 'india':
-        # India sectors with representative stocks
-        sectors = {
-            "IT": ["TCS.NS", "INFY.NS", "WIPRO.NS"],
-            "Banking": ["HDFCBANK.NS", "SBIN.NS", "ICICIBANK.NS"],
-            "Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS"],
-            "Auto": ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS"],
-            "Energy": ["RELIANCE.NS", "ONGC.NS", "NTPC.NS"],
-            "FMCG": ["HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS"]
-        }
+    if country:
+        country_lower = country.lower()
+        if country_lower == 'india':
+            # India sectors with representative stocks
+            sectors = {
+                "IT": ["TCS.NS", "INFY.NS", "WIPRO.NS"],
+                "Banking": ["HDFCBANK.NS", "SBIN.NS", "ICICIBANK.NS"],
+                "Pharma": ["SUNPHARMA.NS", "DRREDDY.NS", "CIPLA.NS"],
+                "Auto": ["TATAMOTORS.NS", "MARUTI.NS", "M&M.NS"],
+                "Energy": ["RELIANCE.NS", "ONGC.NS", "NTPC.NS"],
+                "FMCG": ["HINDUNILVR.NS", "ITC.NS", "NESTLEIND.NS"]
+            }
+        elif country_lower == 'pakistan':
+            # Pakistan sectors with representative stocks (mock tickers, replace with actual if available)
+            sectors = {
+                "Banking": ["UBL.KA", "HBL.KA", "MCB.KA"],
+                "Energy": ["PSO.KA", "KAPCO.KA", "SNGP.KA"],
+                "Telecom": ["PTCL.KA", "CMPAK.KA", "WATEEN.KA"],
+                "Cement": ["LUCK.KA", "DGKC.KA", "FECTC.KA"],
+                "Fertilizer": ["FATIMA.KA", "FFBL.KA", "ENGRO.KA"]
+            }
+        elif country_lower == 'china':
+            # China sectors with representative stocks (mock tickers)
+            sectors = {
+                "Technology": ["BIDU", "TCEHY", "JD"],
+                "Finance": ["ICBC", "CMB", "ABC"],
+                "Energy": ["SNP", "PTR", "HNP"],
+                "Consumer": ["MCD", "KFC", "YUMC"],
+                "Industrial": ["BAIC", "CRRC", "CSIC"]
+            }
+        elif country_lower == 'eu':
+            # EU sectors with representative stocks (mock tickers)
+            sectors = {
+                "Technology": ["SAP.DE", "ASML.AS", "STM.PA"],
+                "Finance": ["HSBA.L", "BNP.PA", "DBK.DE"],
+                "Energy": ["RDSA.AS", "ENEL.MI", "IBE.MC"],
+                "Consumer": ["NESN.SW", "LVMH.PA", "AD.AS"],
+                "Industrial": ["SIEMENS.DE", "AIR.PA", "VOW3.DE"]
+            }
+        elif country_lower == 'uk':
+            # UK sectors with representative stocks
+            sectors = {
+                "Technology": ["SAGE.L", "AVE.L", "CDR.L"],
+                "Finance": ["HSBA.L", "BARC.L", "LLOY.L"],
+                "Energy": ["BP.L", "RDSA.L", "NG.L"],
+                "Consumer": ["DGE.L", "ULVR.L", "MKS.L"],
+                "Industrial": ["BA.L", "GKN.L", "RR.L"]
+            }
+        else:
+            # US sectors with representative stocks
+            sectors = {
+                "Technology": ["AAPL", "MSFT", "GOOGL"],
+                "Finance": ["JPM", "BAC", "GS"],
+                "Healthcare": ["JNJ", "PFE", "UNH"],
+                "Consumer": ["AMZN", "WMT", "PG"],
+                "Energy": ["XOM", "CVX", "COP"],
+                "Industrial": ["GE", "BA", "CAT"]
+            }
     else:
-        # US sectors with representative stocks
+        # Default to US sectors
         sectors = {
             "Technology": ["AAPL", "MSFT", "GOOGL"],
             "Finance": ["JPM", "BAC", "GS"],
@@ -905,7 +1028,23 @@ def chat():
             try:
                 # Determine if this is an India-specific query
                 is_india_query = any(term in user_input.lower() for term in ["india", "indian", "nifty", "sensex", "rbi", "bharti", "reliance"])
-                country = "india" if is_india_query else "us"
+                is_pakistan_query = any(term in user_input.lower() for term in ["pakistan", "kse", "karachi", "pakistani"])
+                is_china_query = any(term in user_input.lower() for term in ["china", "chinese", "shanghai", "beijing", "csi 300"])
+                is_eu_query = any(term in user_input.lower() for term in ["eu", "european union", "europe", "eurozone", "dax", "stoxx", "ftse"])
+                is_uk_query = any(term in user_input.lower() for term in ["uk", "united kingdom", "london", "ftse 100", "ftse 250"])
+                country = "us"  # default
+                
+                if is_india_query:
+                    country = "india"
+                elif is_pakistan_query:
+                    country = "pakistan"
+                elif is_china_query:
+                    country = "china"
+                elif is_eu_query:
+                    country = "eu"
+                elif is_uk_query:
+                    country = "uk"
+                
                 app.logger.info(f"Market analysis query for country: {country}")
                 
                 # Gather comprehensive market data
@@ -979,11 +1118,11 @@ Important instructions:
                     if india_trend:
                         india_analysis = f"## India Market Analysis\n\n{india_trend}\n\nIT and Banking sectors are currently the key drivers of market movement. Recent RBI monetary policy and government initiatives in manufacturing are shaping market sentiment."
                         return jsonify(india_analysis)
-                elif "america" in user_input.lower() or "us" in user_input.lower() or "united states" in user_input.lower():
-                    us_indices = ["S&P 500", "Dow Jones", "NASDAQ"]
-                    us_trend = ""
+                elif is_pakistan_query:
+                    pakistan_indices = ["KSE 100", "KSE 30"]
+                    pakistan_trend = ""
                     
-                    for idx in us_indices:
+                    for idx in pakistan_indices:
                         if idx in market_indices:
                             direction = "positive" if market_indices[idx]['change'] >= 0 else "negative"
                             magnitude = abs(market_indices[idx]['percent_change'])
@@ -994,11 +1133,71 @@ Important instructions:
                             else:
                                 strength = "strongly"
                             
-                            us_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
+                            pakistan_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
                     
-                    if us_trend:
-                        us_analysis = f"## US Market Analysis\n\n{us_trend}\n\nTechnology and Finance are the key sectors influencing today's market movement. Recent economic reports show moderate inflation and steady employment figures."
-                        return jsonify(us_analysis)
+                    if pakistan_trend:
+                        pakistan_analysis = f"## Pakistan Market Analysis\n\n{pakistan_trend}\n\nBanking and Energy sectors are currently the key drivers of market movement. Recent SBP monetary policy and trade agreements are influencing market sentiment."
+                        return jsonify(pakistan_analysis)
+                elif is_china_query:
+                    china_indices = ["Shanghai Composite", "CSI 300"]
+                    china_trend = ""
+                    
+                    for idx in china_indices:
+                        if idx in market_indices:
+                            direction = "positive" if market_indices[idx]['change'] >= 0 else "negative"
+                            magnitude = abs(market_indices[idx]['percent_change'])
+                            if magnitude < 0.5:
+                                strength = "slightly"
+                            elif magnitude < 1.0:
+                                strength = "moderately"
+                            else:
+                                strength = "strongly"
+                            
+                            china_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
+                    
+                    if china_trend:
+                        china_analysis = f"## China Market Analysis\n\n{china_trend}\n\nTechnology and Manufacturing sectors are currently the key drivers of market movement. Recent PBOC policies and trade agreements are influencing market sentiment."
+                        return jsonify(china_analysis)
+                elif is_eu_query:
+                    eu_indices = ["Euro Stoxx 50", "DAX", "FTSE 100"]
+                    eu_trend = ""
+                    
+                    for idx in eu_indices:
+                        if idx in market_indices:
+                            direction = "positive" if market_indices[idx]['change'] >= 0 else "negative"
+                            magnitude = abs(market_indices[idx]['percent_change'])
+                            if magnitude < 0.5:
+                                strength = "slightly"
+                            elif magnitude < 1.0:
+                                strength = "moderately"
+                            else:
+                                strength = "strongly"
+                            
+                            eu_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
+                    
+                    if eu_trend:
+                        eu_analysis = f"## EU Market Analysis\n\n{eu_trend}\n\nFinance and Energy sectors are currently the key drivers of market movement. ECB policies and trade negotiations are influencing market sentiment."
+                        return jsonify(eu_analysis)
+                elif is_uk_query:
+                    uk_indices = ["FTSE 100", "FTSE 250"]
+                    uk_trend = ""
+                    
+                    for idx in uk_indices:
+                        if idx in market_indices:
+                            direction = "positive" if market_indices[idx]['change'] >= 0 else "negative"
+                            magnitude = abs(market_indices[idx]['percent_change'])
+                            if magnitude < 0.5:
+                                strength = "slightly"
+                            elif magnitude < 1.0:
+                                strength = "moderately"
+                            else:
+                                strength = "strongly"
+                            
+                            uk_trend += f"The {idx} is trending {strength} {direction} at {magnitude:.2f}%. "
+                    
+                    if uk_trend:
+                        uk_analysis = f"## UK Market Analysis\n\n{uk_trend}\n\nBanking and Consumer sectors are currently the key drivers of market movement. BOE policies and trade agreements are influencing market sentiment."
+                        return jsonify(uk_analysis)
                 
                 # If no specific country analysis, return condensed data
                 timestamp = datetime.now().strftime("%Y-%m-%d %H:%M")
