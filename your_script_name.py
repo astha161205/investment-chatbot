@@ -1322,6 +1322,33 @@ Use clear headings, bullet points, and include relevant data points."""
         app.logger.error(f"Error handling investment advice query: {str(e)}")
         return "I'm currently experiencing difficulties with providing detailed market analysis. Would you like me to provide information about a specific stock instead?"
 
+testimonials = []  # Global list to store testimonials in memory
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    name = request.form.get('name') or request.json.get('name')
+    role = request.form.get('role') or request.json.get('role')
+    email = request.form.get('email') or request.json.get('email')
+    rating = request.form.get('rating') or request.json.get('rating')
+    testimonial = request.form.get('testimonial') or request.json.get('testimonial')
+
+    # Save testimonial in memory
+    testimonials.append({
+        'name': name,
+        'role': role,
+        'email': email,
+        'rating': int(rating) if rating else 0,
+        'testimonial': testimonial
+    })
+
+    print(f"Feedback received: Name={name}, Role={role}, Email={email}, Rating={rating}, Testimonial={testimonial}")
+
+    return jsonify({'success': True, 'message': 'Feedback submitted! (Python backend)'})
+
+@app.route('/get_testimonials', methods=['GET'])
+def get_testimonials():
+    return jsonify(testimonials)
+
 # Run the app
 if __name__ == '__main__':
     app.run(debug=True) 

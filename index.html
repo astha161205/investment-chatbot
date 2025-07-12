@@ -1606,10 +1606,10 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
             submitBtn.disabled = true;
             
-            fetch('submit_feedback.php', {
-                method: 'POST',
-                body: formData
-            })
+            fetch('/submit_feedback', {
+    method: 'POST',
+    body: formData
+})
             .then(response => {
                 console.log('Response status:', response.status);
                 return response.text();
@@ -1645,7 +1645,7 @@
         
         // Load Testimonials Function
         function loadTestimonials() {
-            fetch('get_testimonials.php')
+            fetch('/get_testimonials')
             .then(response => response.json())
             .then(data => {
                 const testimonialGrid = document.getElementById('testimonialGrid');
