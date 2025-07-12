@@ -142,7 +142,7 @@
         
         /* Layout */
         .home-container {
-            max-width: 1200px;
+            max-width: 800px;
             margin: 0 auto;
             padding: 40px 20px;
             position: relative;
@@ -205,12 +205,63 @@
             line-height: 1.5;
         }
         
+        .header-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--header-text);
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 16px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            margin-top: 30px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header-cta::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .header-cta:hover {
+            transform: translateY(-3px);
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header-cta:hover::before {
+            transform: translateX(0);
+        }
+        
+        .header-cta i {
+            font-size: 1.2rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .header-cta:hover i {
+            transform: translateX(5px);
+        }
+        
         /* Features Grid */
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 30px;
-            max-width: 1200px;
+            max-width: 900px;
             margin: 50px auto 60px;
         }
         
@@ -407,26 +458,101 @@
             position: relative;
         }
         
+        .footer-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 30px;
+            text-align: left;
+        }
+        
+        .footer-right-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        
+        .footer-section h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .footer-section h3::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 30px;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+        
+        .footer-section:hover h3::after {
+            width: 50px;
+        }
+        
+        .footer-section p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+        
+        .footer-subsection h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-color);
+            margin-bottom: 15px;
+            position: relative;
+        }
+        
+        .footer-subsection h3::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 25px;
+            height: 2px;
+            background: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+        
+        .footer-subsection:hover h3::after {
+            width: 40px;
+        }
+        
+        .footer-subsection p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
         .footer-links {
-            margin-top: 15px;
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
+            list-style: none;
+            padding: 0;
+        }
+        
+        .footer-links li {
+            margin-bottom: 10px;
         }
         
         .footer-links a {
-            color: var(--primary-color);
+            color: var(--text-secondary);
             text-decoration: none;
             font-size: 0.95rem;
             transition: all 0.3s ease;
             position: relative;
+            display: inline-block;
         }
         
         .footer-links a::after {
             content: '';
             position: absolute;
-            bottom: -3px;
+            bottom: -2px;
             left: 0;
             width: 0;
             height: 2px;
@@ -434,8 +560,24 @@
             transition: width 0.3s ease;
         }
         
+        .footer-links a:hover {
+            color: var(--primary-color);
+        }
+        
         .footer-links a:hover::after {
             width: 100%;
+        }
+        
+        .footer-bottom {
+            text-align: center;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        .footer-bottom p {
+            margin: 0;
         }
         
         /* Theme Toggle */
@@ -559,6 +701,13 @@
             font-size: 0.85rem;
         }
         
+        .rating-display {
+            color: #ffd700;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        
         /* Stats Section */
         .stats-section {
             display: grid;
@@ -599,10 +748,13 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 20px 0;
-            margin-bottom: 40px;
+            padding: 30px 40px 20px 40px;
+            margin-bottom: 20px;
             position: relative;
             z-index: 100;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
         }
         
         .nav-logo {
@@ -707,20 +859,55 @@
         
         @media (max-width: 768px) {
             .features-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: 1fr;
                 gap: 20px;
+            }
+            
+            .navbar {
+                padding: 25px 20px 15px 20px;
+            }
+            
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 30px;
+                text-align: center;
+            }
+            
+            .footer-right-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .footer-section h3::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            
+            .footer-subsection h3::after {
+                left: 50%;
+                transform: translateX(-50%);
+            }
+            
+            .modal {
+                padding: 10px 0;
+                height: 100vh;
+            }
+            
+            .modal-content {
+                margin: 10px auto;
+                width: 95%;
+                max-height: none;
+                overflow: visible;
+            }
+            
+            .feedback-form {
+                padding: 20px;
+                max-height: none;
+                overflow: visible;
             }
             
             .logo h1 {
                 font-size: 2.2rem;
-            }
-            
-            .logo i {
-                font-size: 2.2rem;
-            }
-            
-            .tagline {
-                font-size: 1.2rem;
             }
             
             .feature-icon {
@@ -790,6 +977,236 @@
                 padding: 40px 20px;
                 margin-bottom: 40px;
             }
+            
+            .header-cta {
+                padding: 12px 24px;
+                font-size: 0.95rem;
+                margin-top: 20px;
+            }
+        }
+
+        /* Feedback Button */
+        .feedback-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 30px;
+            box-shadow: var(--card-shadow);
+        }
+        
+        .feedback-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--card-hover-shadow);
+            background: var(--secondary-color);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            padding: 20px 0;
+            box-sizing: border-box;
+        }
+        
+        .modal-content {
+            background-color: var(--card-bg);
+            margin: 20px auto;
+            padding: 0;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: var(--card-hover-shadow);
+            animation: modalSlideIn 0.3s ease-out;
+            max-height: none;
+            overflow: visible;
+        }
+        
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 25px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .modal-header h3 {
+            margin: 0;
+            color: var(--text-color);
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: all 0.3s ease;
+        }
+        
+        .close-btn:hover {
+            background: var(--border-color);
+            color: var(--text-color);
+        }
+        
+        /* Form Styles */
+        .feedback-form {
+            padding: 25px;
+            max-height: none;
+            overflow: visible;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-color);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+        
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: var(--card-bg);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+        
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(58, 99, 238, 0.1);
+        }
+        
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        /* Ensure form is scrollable */
+        .feedback-form {
+            padding: 25px;
+            max-height: none;
+            overflow: visible;
+            display: block;
+        }
+        
+        /* Make sure modal doesn't interfere with scrolling */
+        body.modal-open {
+            overflow: auto !important;
+        }
+        
+        /* Rating Stars */
+        .rating-stars {
+            display: flex;
+            flex-direction: row-reverse;
+            gap: 5px;
+        }
+        
+        .rating-stars input[type="radio"] {
+            display: none;
+        }
+        
+        .rating-stars label {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #ddd;
+            transition: color 0.3s ease;
+        }
+        
+        .rating-stars label:hover,
+        .rating-stars label:hover ~ label,
+        .rating-stars input[type="radio"]:checked ~ label {
+            color: #ffd700;
+        }
+        
+        /* Form Actions */
+        .form-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 25px;
+        }
+        
+        .cancel-btn {
+            background: none;
+            border: 2px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .cancel-btn:hover {
+            border-color: var(--text-color);
+            color: var(--text-color);
+        }
+        
+        .submit-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .submit-btn:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--card-shadow);
         }
     </style>
 </head>
@@ -800,26 +1217,26 @@
         <div class="bg-circle bg-circle-3"></div>
     </div>
     
-    <div class="home-container">
-        <nav class="navbar">
-            <a href="#" class="nav-logo">
-                <i class="fas fa-chart-line"></i>
-                <span>AI Advisor</span>
-            </a>
-            
-            <div class="nav-links">
-                <a href="#" class="nav-link">Home</a>
-                <a href="#features" class="nav-link">Features</a>
-                <!-- <a href="#" class="nav-link">Pricing</a>
-                <a href="#" class="nav-link">About</a> -->
-                <a href="chat.html" class="nav-link nav-cta">Get Started</a>
-            </div>
-            
-            <button class="mobile-menu-btn">
-                <i class="fas fa-bars"></i>
-            </button>
-        </nav>
+    <nav class="navbar">
+        <a href="#" class="nav-logo">
+            <i class="fas fa-chart-line"></i>
+            <span>AI Investment Advisor</span>
+        </a>
         
+        <div class="nav-links">
+            <a href="#" class="nav-link">Home</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#" class="nav-link">feedback</a>
+            <a href="chat.html" class="nav-link">Chat</a>
+            <!-- <a href="chat.html" class="nav-link nav-cta">Get Started</a> -->
+        </div>
+        
+        <!-- <button class="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+        </button> -->
+    </nav>
+    
+    <div class="home-container">
         <header class="home-header">
             <button id="themeToggle" class="theme-toggle" title="Toggle dark/light mode">
                 <i class="fas fa-moon"></i>
@@ -829,6 +1246,10 @@
                 <h1>AI Investment Advisor</h1>
             </div>
             <p class="tagline">Your personal AI-powered investment assistant for smarter financial decisions</p>
+            <a href="chat.html" class="header-cta">
+                <i class="fas fa-rocket"></i>
+                Get Started
+            </a>
         </header>
         
         <main class="home-content">
@@ -866,47 +1287,109 @@
                 </div>
             </div>
             
-            <div class="stats-section">
-                <div class="stat-card">
-                    <div class="stat-value">98%</div>
-                    <div class="stat-label">Customer Satisfaction</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-value">10K+</div>
-                    <div class="stat-label">Active Users</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-value">24/7</div>
-                    <div class="stat-label">Support Available</div>
-                </div>
-                
-                <div class="stat-card">
-                    <div class="stat-value">100+</div>
-                    <div class="stat-label">Markets Covered</div>
-                </div>
-            </div>
+            
             
             <div class="testimonials">
                 <h2 class="section-title">What Our Users Say</h2>
                 <p class="section-subtitle">Join thousands of investors who trust our AI-powered platform for their financial decisions</p>
+                <button class="feedback-btn" onclick="openFeedbackModal()">
+                    <i class="fas fa-plus"></i>
+                    Share Your Experience
+                </button>
                 
-                <div class="testimonial-grid">
-                    <div class="testimonial-card">
-                        <div class="testimonial-quote">"</div>
-                        <p class="testimonial-text">This AI advisor completely transformed my investment strategy. The personalized recommendations helped me achieve my financial goals faster than I expected.</p>
-                        <div class="testimonial-author">
-                            <div class="author-avatar">JD</div>
-                            <div class="author-info">
-                                <div class="author-name">John Doe</div>
-                                <div class="author-role">Retail Investor</div>
+                <div class="testimonial-grid" id="testimonialGrid">
+                    <!-- Testimonials will be loaded dynamically -->
+                </div>
+                
+                
+            </div>
+            
+            <!-- Feedback Modal -->
+            <div id="feedbackModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>Share Your Experience</h3>
+                        <button class="close-btn" onclick="closeFeedbackModal()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="feedbackForm" class="feedback-form">
+                        <div class="form-group">
+                            <label for="name">Your Name *</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="role">Your Role/Occupation</label>
+                            <input type="text" id="role" name="role" placeholder="e.g., Retail Investor, Financial Advisor">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" name="email" placeholder="your@email.com">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Rating *</label>
+                            <div class="rating-stars">
+                                <input type="radio" id="star5" name="rating" value="5" required>
+                                <label for="star5"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star4" name="rating" value="4">
+                                <label for="star4"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star3" name="rating" value="3">
+                                <label for="star3"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star2" name="rating" value="2">
+                                <label for="star2"><i class="fas fa-star"></i></label>
+                                <input type="radio" id="star1" name="rating" value="1">
+                                <label for="star1"><i class="fas fa-star"></i></label>
                             </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="testimonial">Your Experience *</label>
+                            <textarea id="testimonial" name="testimonial" rows="4" required placeholder="Share your experience with our AI Investment Advisor..."></textarea>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="button" class="cancel-btn" onclick="closeFeedbackModal()">Cancel</button>
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-paper-plane"></i>
+                                Submit Feedback
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </main>
+        <footer class="home-footer">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>AI Investment Advisor</h3>
+                    <p>Making investment decisions smarter and more accessible.</p>
+                </div>
+                <div class="footer-section">
+                    <div class="footer-right-content">
+                        <div class="footer-subsection">
+                            <h3>Quick Links</h3>
+                            <ul class="footer-links">
+                                <li><a href="/">Home</a></li>
+                                <li><a href="/chat.html">Chat</a></li>
+                                <li><a href="#features">Features</a></li>
+                                <li><a href="/portfolio.html">feedback</a></li>
+                            </ul>
+                        </div>
+                        <div class="footer-subsection">
+                            <h3>Contact</h3>
+                            <p>Email: singhalastha26@gmail.com</p>
+                            <p>Phone: +91 7452977402</p>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
+            <div class="footer-bottom">
+                <p>&copy; 2025 AI Investment Advisor. All rights reserved.</p>
+            </div>
+        </footer>
     </div>
     
     <script>
@@ -965,7 +1448,143 @@
                     }
                 });
             });
+            
+            // Load testimonials
+            loadTestimonials();
         });
+        
+        // Modal Functions
+        function openFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'block';
+            document.body.classList.add('modal-open'); // Add class to body for modal-open
+        }
+        
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+            document.getElementById('feedbackForm').reset();
+            document.body.classList.remove('modal-open'); // Remove class from body
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('feedbackModal');
+            if (event.target === modal) {
+                closeFeedbackModal();
+            }
+        }
+        
+        // Form Submission
+        document.getElementById('feedbackForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const submitBtn = this.querySelector('.submit-btn');
+            const originalText = submitBtn.innerHTML;
+            
+            // Debug: Log form data
+            console.log('Form data being sent:');
+            for (let [key, value] of formData.entries()) {
+                console.log(key + ': ' + value);
+            }
+            
+            // Show loading state
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+            
+            fetch('submit_feedback.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('Response status:', response.status);
+                return response.text();
+            })
+            .then(text => {
+                console.log('Raw response:', text);
+                try {
+                    return JSON.parse(text);
+                } catch (e) {
+                    console.error('JSON parse error:', e);
+                    throw new Error('Invalid JSON response: ' + text);
+                }
+            })
+            .then(data => {
+                console.log('Parsed response:', data);
+                if (data.success) {
+                    alert('Thank you for your feedback! It will be reviewed and posted soon.');
+                    closeFeedbackModal();
+                    loadTestimonials(); // Reload testimonials
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred: ' + error.message);
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        });
+        
+        // Load Testimonials Function
+        function loadTestimonials() {
+            fetch('get_testimonials.php')
+            .then(response => response.json())
+            .then(data => {
+                const testimonialGrid = document.getElementById('testimonialGrid');
+                
+                if (data.length === 0) {
+                    testimonialGrid.innerHTML = `
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">"</div>
+                            <p class="testimonial-text">Be the first to share your experience with our AI Investment Advisor!</p>
+                            <div class="testimonial-author">
+                                <div class="author-avatar">AI</div>
+                                <div class="author-info">
+                                    <div class="author-name">AI Advisor</div>
+                                    <div class="author-role">Your Investment Assistant</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    testimonialGrid.innerHTML = data.map(testimonial => `
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">"</div>
+                            <div class="rating-display">
+                                ${'★'.repeat(testimonial.rating)}${'☆'.repeat(5-testimonial.rating)}
+                            </div>
+                            <p class="testimonial-text">${testimonial.testimonial}</p>
+                            <div class="testimonial-author">
+                                <div class="author-avatar">${testimonial.name.charAt(0).toUpperCase()}</div>
+                                <div class="author-info">
+                                    <div class="author-name">${testimonial.name}</div>
+                                    <div class="author-role">${testimonial.role || 'User'}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            })
+            .catch(error => {
+                console.error('Error loading testimonials:', error);
+                document.getElementById('testimonialGrid').innerHTML = `
+                    <div class="testimonial-card">
+                        <div class="testimonial-quote">"</div>
+                        <p class="testimonial-text">This AI advisor completely transformed my investment strategy. The personalized recommendations helped me achieve my financial goals faster than I expected.</p>
+                        <div class="testimonial-author">
+                            <div class="author-avatar">JD</div>
+                            <div class="author-info">
+                                <div class="author-name">John Doe</div>
+                                <div class="author-role">Retail Investor</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
     </script>
 </body>
 </html>

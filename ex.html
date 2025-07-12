@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Investment Advisor - Home</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Clash+Display:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3a63ee',
+                        secondary: '#5581f1',
+                        accent: '#06b6d4',
+                    },
+                    fontFamily: {
+                        'display': ['Clash Display', 'sans-serif'],
+                        'heading': ['Outfit', 'sans-serif'],
+                        'body': ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'card': '0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01)',
+                        'card-hover': '0 25px 50px -12px rgba(0, 0, 0, 0.1)',
+                        'cta': '0 10px 25px rgba(58, 99, 238, 0.4)',
+                    },
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                        'fade-in': 'fadeIn 0.5s ease-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'slide-down': 'slideDown 0.5s ease-out',
+                        'slide-left': 'slideLeft 0.5s ease-out',
+                        'slide-right': 'slideRight 0.5s ease-out',
+                        'scale-in': 'scaleIn 0.5s ease-out',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        slideDown: {
+                            '0%': { transform: 'translateY(-20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        slideLeft: {
+                            '0%': { transform: 'translateX(20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        slideRight: {
+                            '0%': { transform: 'translateX(-20px)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        scaleIn: {
+                            '0%': { transform: 'scale(0.95)', opacity: '0' },
+                            '100%': { transform: 'scale(1)', opacity: '1' },
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles that can't be handled by Tailwind */
+        .bg-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            background: linear-gradient(135deg, rgba(58, 99, 238, 0.1) 0%, rgba(6, 182, 212, 0.1) 100%);
+        }
+        
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 25px 25px, rgba(58, 99, 238, 0.2) 2%, transparent 0%),
+                radial-gradient(circle at 75px 75px, rgba(6, 182, 212, 0.2) 2%, transparent 0%);
+            background-size: 100px 100px;
+        }
+        
+        .bg-circle {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            mix-blend-mode: multiply;
+        }
+        
+        .bg-circle-1 {
+            top: -10%;
+            left: -10%;
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(58, 99, 238, 0.2), rgba(6, 182, 212, 0.2));
+            animation: float 15s ease-in-out infinite;
+        }
+        
+        .bg-circle-2 {
+            bottom: -10%;
+            right: -10%;
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(245, 158, 11, 0.2));
+            animation: float 20s ease-in-out infinite reverse;
+        }
+        
+        .bg-circle-3 {
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(58, 99, 238, 0.2));
+            animation: float 25s ease-in-out infinite;
+        }
+
+        .dark .bg-gradient {
+            background: linear-gradient(135deg, rgba(58, 99, 238, 0.15) 0%, rgba(6, 182, 212, 0.15) 100%);
+        }
+
+        .dark .bg-pattern {
+            opacity: 0.15;
+            background-image: 
+                radial-gradient(circle at 25px 25px, rgba(58, 99, 238, 0.3) 2%, transparent 0%),
+                radial-gradient(circle at 75px 75px, rgba(6, 182, 212, 0.3) 2%, transparent 0%);
+        }
+
+        .dark .bg-circle {
+            opacity: 0.4;
+        }
+        
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f8fafc;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #3a63ee;
+            border-radius: 4px;
+        }
+
+        .dark ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+
+        .dark ::-webkit-scrollbar-thumb {
+            background: #5581f1;
+        }
+
+        /* Header pattern */
+        .header-pattern {
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%"><pattern id="pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse" patternTransform="rotate(30)"><rect x="0" y="0" width="100%" height="100%" fill="none"/><path d="M0 20h40" stroke-width="1" stroke="rgba(255,255,255,0.2)" fill="none"/></pattern><rect x="0" y="0" width="100%" height="100%" fill="url(%23pattern)"/></svg>');
+            opacity: 0.4;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translate(0, 0);
+            }
+            25% {
+                transform: translate(10px, -10px);
+            }
+            50% {
+                transform: translate(-5px, 15px);
+            }
+            75% {
+                transform: translate(-15px, -5px);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-slate-900 text-gray-900 dark:text-gray-100 font-body transition-colors duration-300 min-h-screen">
+    <!-- Background Elements -->
+    <div class="bg-gradient"></div>
+    <div class="bg-pattern"></div>
+        <div class="bg-circle bg-circle-1"></div>
+        <div class="bg-circle bg-circle-2"></div>
+        <div class="bg-circle bg-circle-3"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <!-- Navigation -->
+        <nav class="flex justify-between items-center mb-10 animate-slide-down">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-chart-line text-3xl text-primary animate-pulse-slow"></i>
+                <h1 class="text-3xl font-display font-bold text-gray-900 dark:text-white">AI Investment Advisor</h1>
+    </div>
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="/" class="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition-colors relative group">
+                    Home
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="/chat.html" class="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition-colors relative group">
+                    Chat
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="/market-analysis.html" class="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition-colors relative group">
+                    Market Analysis
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+                <a href="/portfolio.html" class="text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary font-medium transition-colors relative group">
+                    Portfolio
+                    <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                </a>
+            </div>
+            <button id="themeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors hover:rotate-12">
+                <i class="fas fa-moon text-gray-700 dark:text-gray-300"></i>
+            </button>
+        </nav>
+        
+        <!-- Header Section -->
+        <header class="text-center bg-gradient-to-r from-primary to-secondary text-white rounded-3xl p-12 mb-16 shadow-lg relative overflow-hidden animate-scale-in">
+            <div class="header-pattern absolute inset-0"></div>
+            <div class="flex items-center justify-center space-x-4 mb-6">
+                <i class="fas fa-chart-line text-4xl animate-float"></i>
+                <h1 class="text-4xl font-display font-bold animate-slide-up">AI Investment Advisor</h1>
+            </div>
+            <p class="text-xl opacity-90 max-w-2xl mx-auto mb-8 animate-slide-up font-heading" style="animation-delay: 0.2s">Your intelligent companion for smart investment decisions</p>
+            <a href="/chat.html" class="inline-flex items-center px-8 py-4 bg-white text-primary rounded-full font-medium shadow-cta hover:shadow-xl transition-all duration-300 hover:-translate-y-1 relative overflow-hidden group animate-slide-up" style="animation-delay: 0.4s">
+                <span class="relative z-10">Start Chatting</span>
+                <i class="fas fa-arrow-right ml-2 relative z-10 group-hover:translate-x-1 transition-transform"></i>
+                <div class="absolute inset-0 bg-gradient-to-r from-secondary to-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            </a>
+        </header>
+        
+        <!-- Features Section -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-2 relative overflow-hidden group animate-slide-up" style="animation-delay: 0.1s">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary to-accent transform -translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                <div class="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-chart-bar text-3xl text-primary"></i>
+                    </div>
+                <h3 class="text-xl font-heading font-semibold mb-4 text-gray-900 dark:text-white">Real-time Market Data</h3>
+                <p class="text-gray-600 dark:text-gray-400">Access up-to-the-minute stock prices, market trends, and financial indicators for informed decision-making.</p>
+                </div>
+                
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-2 relative overflow-hidden group animate-slide-up" style="animation-delay: 0.2s">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-accent to-primary transform -translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                <div class="w-20 h-20 rounded-2xl bg-cyan-50 dark:bg-cyan-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-robot text-3xl text-accent"></i>
+                    </div>
+                <h3 class="text-xl font-heading font-semibold mb-4 text-gray-900 dark:text-white">AI-Powered Analysis</h3>
+                <p class="text-gray-600 dark:text-gray-400">Get intelligent insights and recommendations powered by advanced AI algorithms and market analysis.</p>
+                </div>
+                
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-2 relative overflow-hidden group animate-slide-up" style="animation-delay: 0.3s">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-primary transform -translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                <div class="w-20 h-20 rounded-2xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-globe text-3xl text-amber-500"></i>
+                    </div>
+                <h3 class="text-xl font-heading font-semibold mb-4 text-gray-900 dark:text-white">Global Market Coverage</h3>
+                <p class="text-gray-600 dark:text-gray-400">Track and analyze stocks from major global markets including US, Indian, and other international exchanges.</p>
+                </div>
+                
+            <div class="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-card hover:shadow-card-hover transition-all duration-300 hover:-translate-y-2 relative overflow-hidden group animate-slide-up" style="animation-delay: 0.4s">
+                <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-purple-500 to-primary transform -translate-y-full group-hover:translate-y-0 transition-transform"></div>
+                <div class="w-20 h-20 rounded-2xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <i class="fas fa-comments text-3xl text-purple-500"></i>
+                </div>
+                <h3 class="text-xl font-heading font-semibold mb-4 text-gray-900 dark:text-white">Natural Language Interface</h3>
+                <p class="text-gray-600 dark:text-gray-400">Ask questions in plain English and get comprehensive answers about stocks, markets, and investment strategies.</p>
+            </div>
+        </section>
+
+        <!-- Market Overview Section -->
+        <section class="mb-16 animate-slide-up" style="animation-delay: 0.5s">
+            <h2 class="text-3xl font-display font-bold mb-8 text-center text-gray-900 dark:text-white">Market Overview</h2>
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-card overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-gray-50 dark:bg-slate-700">
+                            <tr>
+                                <th class="px-6 py-4 text-left font-heading font-semibold text-gray-900 dark:text-white">Index</th>
+                                <th class="px-6 py-4 text-left font-heading font-semibold text-gray-900 dark:text-white">Value</th>
+                                <th class="px-6 py-4 text-left font-heading font-semibold text-gray-900 dark:text-white">Change</th>
+                                <th class="px-6 py-4 text-left font-heading font-semibold text-gray-900 dark:text-white">Volume</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors animate-slide-left" style="animation-delay: 0.6s">
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">S&P 500</td>
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">4,500.00</td>
+                                <td class="px-6 py-4 text-green-600 dark:text-green-400">+1.25%</td>
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">2.5B</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors animate-slide-left" style="animation-delay: 0.7s">
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">NASDAQ</td>
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">14,200.00</td>
+                                <td class="px-6 py-4 text-green-600 dark:text-green-400">+0.85%</td>
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">3.1B</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors animate-slide-left" style="animation-delay: 0.8s">
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">NIFTY 50</td>
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">19,500.00</td>
+                                <td class="px-6 py-4 text-red-600 dark:text-red-400">-0.45%</td>
+                                <td class="px-6 py-4 text-gray-900 dark:text-gray-100">1.8B</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="border-t border-gray-200 dark:border-gray-700 pt-12 pb-8 animate-fade-in" style="animation-delay: 0.9s">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+                <div>
+                    <h3 class="text-xl font-display font-semibold mb-4 text-gray-900 dark:text-white">AI Investment Advisor</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Making investment decisions smarter and more accessible.</p>
+                </div>
+                <div>
+                    <h3 class="text-xl font-display font-semibold mb-4 text-gray-900 dark:text-white">Quick Links</h3>
+                    <ul class="space-y-2">
+                        <li><a href="/" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors relative group">
+                            Home
+                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                        </a></li>
+                        <li><a href="/chat.html" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors relative group">
+                            Chat
+                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                        </a></li>
+                        <li><a href="/market-analysis.html" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors relative group">
+                            Market Analysis
+                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                        </a></li>
+                        <li><a href="/portfolio.html" class="text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors relative group">
+                            Portfolio
+                            <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full"></span>
+                        </a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-xl font-display font-semibold mb-4 text-gray-900 dark:text-white">Contact</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Email: support@aiinvestment.com</p>
+                    <p class="text-gray-600 dark:text-gray-400">Phone: +1 (555) 123-4567</p>
+                </div>
+            </div>
+            <div class="text-center text-gray-600 dark:text-gray-400">
+                <p>&copy; 2024 AI Investment Advisor. All rights reserved.</p>
+                            </div>
+        </footer>
+                        </div>
+    
+    
+    
+    <script>
+        // Theme Toggle
+        const themeToggle = document.getElementById('themeToggle');
+        const html = document.documentElement;
+        
+        // Check for saved theme preference or use system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        // Set initial theme
+        if (savedTheme) {
+            html.classList.remove('light', 'dark');
+            html.classList.add(savedTheme);
+        } else {
+            html.classList.remove('light', 'dark');
+            html.classList.add(systemPrefersDark ? 'dark' : 'light');
+        }
+        
+        // Update icon based on current theme
+        const updateThemeIcon = () => {
+            const isDark = html.classList.contains('dark');
+            const icon = themeToggle.querySelector('i');
+            icon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+        };
+        
+        // Initial icon update
+        updateThemeIcon();
+        
+        // Theme toggle click handler
+        themeToggle.addEventListener('click', () => {
+            const isDark = html.classList.contains('dark');
+            
+            // Toggle theme
+            html.classList.remove('light', 'dark');
+            html.classList.add(isDark ? 'light' : 'dark');
+            
+            // Save preference
+            localStorage.setItem('theme', isDark ? 'light' : 'dark');
+
+            // Update icon
+            updateThemeIcon();
+        });
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                html.classList.remove('light', 'dark');
+                html.classList.add(e.matches ? 'dark' : 'light');
+                updateThemeIcon();
+            }
+        });
+    </script>
+</body>
+</html>
