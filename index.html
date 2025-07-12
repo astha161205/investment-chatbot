@@ -73,6 +73,7 @@
         
         html, body {
             margin: 0;
+           
             padding: 0;
             width: 100%;
             min-height: 100vh;
@@ -609,7 +610,7 @@
         
         /* Testimonials Section */
         .testimonials {
-            margin: 60px 0;
+            margin: 20px 0 10px 0; /* 40px top, 10px bottom */
             text-align: center;
             position: relative;
         }
@@ -1293,11 +1294,13 @@
             margin-left: 0;
             border-top: none;
             box-shadow: none;
-            padding: 0; /* Remove left/right padding here */
+            padding: 0;
             position: relative;
             left: 50%;
             right: 50%;
             transform: translateX(-50%);
+            min-height: 220px;
+            padding-bottom: 32px; /* Added extra bottom padding */
         }
         .home-footer a,
         .home-footer h3,
@@ -1476,6 +1479,7 @@
                 </div>
             </div>
         </main>
+    </div>
         <footer class="home-footer">
             <div class="footer-content">
                 <div class="footer-section">
@@ -1505,7 +1509,7 @@
                 <p>&copy; 2025 AI Investment Advisor. All rights reserved.</p>
             </div>
         </footer>
-    </div>
+    
     
     <script>
         // Get theme toggle button
