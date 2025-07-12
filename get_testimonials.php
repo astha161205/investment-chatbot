@@ -15,8 +15,8 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8", $dbusername, $dbpassword);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     
-    // Get approved testimonials, ordered by creation date (newest first)
-    $sql = "SELECT name, role, rating, testimonial, created_at FROM testimonials WHERE status = 'approved' ORDER BY created_at DESC LIMIT 6";
+    // Get all testimonials (both pending and approved), ordered by creation date (newest first)
+    $sql = "SELECT name, role, rating, testimonial, created_at FROM testimonials ORDER BY created_at DESC LIMIT 6";
     $stmt = $pdo->prepare($sql);
     $stmt->execute();
     

@@ -63,7 +63,7 @@ try {
     $testimonial = htmlspecialchars($testimonial, ENT_QUOTES, 'UTF-8');
     
     // Prepare SQL statement
-    $sql = "INSERT INTO testimonials (name, role, email, rating, testimonial, status) VALUES (?, ?, ?, ?, ?, 'pending')";
+    $sql = "INSERT INTO testimonials (name, role, email, rating, testimonial, status) VALUES (?, ?, ?, ?, ?, 'approved')";
     $stmt = $pdo->prepare($sql);
     
     // Execute the statement
