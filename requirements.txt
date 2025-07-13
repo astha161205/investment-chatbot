@@ -5,4 +5,11 @@ pandas==2.2.3
 numpy==2.2.3
 Werkzeug==3.0.6
 google-generativeai==0.8.5
+google-api-python-client==2.169.0
+google-ai-generativelanguage==0.6.15
+python-dotenv==1.0.1
+httpcore==1.0.8
+httplib2==0.22.0
+httpx==0.28.1
+requests==2.32.3
 gunicorn
