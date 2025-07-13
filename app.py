@@ -9,6 +9,7 @@ from datetime import datetime
 import google.generativeai as genai  # Import Google Generative AI library
 from dotenv import load_dotenv
 import time
+from yfinance.exceptions import YFRateLimitError
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -29,25 +30,19 @@ api_available = True  # Set to True to indicate API is available
 
 # Simple in-memory cache for stock data
 stock_cache = {}  # {symbol: (data, timestamp)}
+CACHE_DURATION = 300  # seconds (5 minutes)
 
 # Function to fetch stock data with caching and error handling
 def get_stock_data(ticker):
     now = time.time()
-    cache_duration = 180  # Cache for 3 minutes
-    if ticker in stock_cache:
-        data, timestamp = stock_cache[ticker]
-        if now - timestamp < cache_duration:
-            return data
+    if ticker in stock_cache and now - stock_cache[ticker]['time'] < CACHE_DURATION:
+        return stock_cache[ticker]['data']
+    stock = yf.Ticker(ticker)
     try:
-        stock = yf.Ticker(ticker)
         data = stock.history(period="1d")
-        stock_cache[ticker] = (data, now)
+        stock_cache[ticker] = {'data': data, 'time': now}
         return data
-    except Exception as e:
-        print(f"Error fetching data for {ticker}: {e}")
-        # Optionally, return last cached data if available
-        if ticker in stock_cache:
-            return stock_cache[ticker][0]
+    except YFRateLimitError:
         return None
 
 # Serve the homepage
@@ -70,8 +65,8 @@ def styles():
 def stock():
     ticker = request.args.get('ticker')
     data = get_stock_data(ticker)
-    if data is None or data.empty:
-        return jsonify({'error': 'Data temporarily unavailable due to rate limits. Please try again later.'}), 503
+    if data is None:
+        return jsonify({"error": "Rate limited by Yahoo Finance. Please try again later."}), 429
     # Convert the data to a format that can be JSON serialized
     result = {}
     for column in data.columns:
@@ -1002,7 +997,7 @@ def generate_gemini_response(prompt, max_tokens=500):
         app.logger.error(f"Detailed error trace: {error_details}")
         return None
 
-# Modify the chat endpoint to handle investment advice queries better
+# Modify the chat endpoint to handle investment advice queries
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
@@ -1363,4 +1358,4 @@ def get_testimonials():
 
 # Run the app
 if __name__ == '__main__':
-    app.run(debug=True) 
+    app.run(debug=True)
