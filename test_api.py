@@ -2,7 +2,7 @@ import google.generativeai as genai
 import sys
 
 # Configure the API key
-api_key = 'AIzaSyDfTKLzfBqmUOewYJtMJUP3Kg59QHNmT1I'
+api_key = 'AIzaSyApehQ1TkiRU0_WMjlvavHUPyzKIxBoli8'
 
 print(f"Python version: {sys.version}")
 print(f"Testing API key: {api_key[:5]}...{api_key[-5:]}")

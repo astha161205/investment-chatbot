@@ -143,7 +143,7 @@
         
         /* Layout */
         .home-container {
-            max-width: 800px;
+            max-width: 950px;
             margin: 0 auto;
             padding: 40px 20px;
             position: relative;
@@ -647,7 +647,7 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 30px;
             margin-top: 30px;
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
             padding-right: 10px;
             scrollbar-width: thin;
@@ -910,7 +910,7 @@
             
             .testimonial-grid {
                 grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-                max-height: 500px;
+                max-height: 400px;
             }
             
             .nav-links {
@@ -1012,7 +1012,7 @@
             
             .testimonial-grid {
                 grid-template-columns: 1fr;
-                max-height: 400px;
+                max-height: 350px;
             }
             
             .stats-section {
@@ -1300,7 +1300,11 @@
             right: 50%;
             transform: translateX(-50%);
             min-height: 220px;
-            padding-bottom: 32px; /* Added extra bottom padding */
+            padding-bottom: 32px;
+            text-align: left;
+            margin-left: 10px;
+            margin-right: 10px;
+            /* Added extra bottom padding */
         }
         .home-footer a,
         .home-footer h3,
@@ -1321,6 +1325,7 @@
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px 30px 0 30px;
+            text-align: left;
         }
     </style>
 </head>
@@ -1484,7 +1489,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>AI Investment Advisor</h3>
-                    <p>Making investment decisions smarter and more accessible.</p>
+                    <p>Making investment decisions smarter<br> and more accessible.</p>
                 </div>
                 <div class="footer-section">
                     <div class="footer-right-content">
@@ -1688,8 +1693,8 @@
                         </div>
                     `).join('');
                     
-                    // Show scroll indicator if there are more than 3 testimonials
-                    if (data.length > 3) {
+                    // Show scroll indicator if there are more than 2 testimonials
+                    if (data.length > 2) {
                         scrollIndicator.style.display = 'flex';
                     } else {
                         scrollIndicator.style.display = 'none';

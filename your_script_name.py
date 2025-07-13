@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO,
 app = Flask(__name__)
 
 # Set your Google API key
-api_key = 'AIzaSyDfTKLzfBqmUOewYJtMJUP3Kg59QHNmT1I'
+api_key = 'AIzaSyApehQ1TkiRU0_WMjlvavHUPyzKIxBoli8'
 
 # Configure the Gemini model
 genai.configure(api_key=api_key)
@@ -1052,6 +1052,10 @@ def chat():
                 policy_data = get_policy_shifts(country)
                 market_indices = get_market_data_for_analysis(country)
                 sectors = get_sector_performance(country)
+
+                # Debug: Log the fetched data
+                app.logger.info(f"Fetched market_indices: {market_indices}")
+                app.logger.info(f"Fetched sectors: {sectors}")
                 
                 # Format data clearly
                 data = f"## Market Data Summary for {country.upper()}\n\n"
@@ -1072,22 +1076,12 @@ def chat():
                 # Add economic indicators and policy information
                 data += f"\n### Economic Indicators\n{economic_data}\n"
                 data += f"\n### Policy Updates\n{policy_data}\n"
-                
+                # Debug: Log the prompt
+                app.logger.info(f"Prompt sent to Gemini:\n{data}\nUser question: {user_input}")
                 # Try to get AI analysis with a better prompt
                 try:
-                    prompt = f"""You are a financial market analyst. Based on this data about {country} markets:
-{data}
-
-Please provide a thorough analysis addressing this question: {user_input}
-
-Important instructions:
-1. Include all relevant data points from the provided information in your analysis
-2. Format your response with clear headings, bullet points, and use emojis for readability
-3. Your analysis should be complete and standalone without needing to show the raw data
-4. Summarize key metrics from the raw data within your analysis text
-5. Focus on trends, patterns, and implications
-"""
-                    
+                    prompt = f"""You are a financial market analyst. Based on this data about {country} markets:\n{data}\n\nPlease provide a thorough analysis addressing this question: {user_input}\n\nImportant instructions:\n1. Include all relevant data points from the provided information in your analysis\n2. Format your response with clear headings, bullet points, and use emojis for readability\n3. Your analysis should be complete and standalone without needing to show the raw data\n4. Summarize key metrics from the raw data within your analysis text\n5. Focus on trends, patterns, and implications\n"""
+                    app.logger.info(f"Gemini prompt:\n{prompt}")
                     ai_analysis = generate_gemini_response(prompt)
                     
                     if ai_analysis:
