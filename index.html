@@ -467,11 +467,7 @@
             text-align: left;
         }
         
-        .footer-right-content {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
+
         
         .footer-section h3 {
             font-size: 1.2rem;
@@ -502,35 +498,7 @@
             margin-bottom: 8px;
         }
         
-        .footer-subsection h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--text-color);
-            margin-bottom: 15px;
-            position: relative;
-        }
-        
-        .footer-subsection h3::after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 25px;
-            height: 2px;
-            background: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-        
-        .footer-subsection:hover h3::after {
-            width: 40px;
-        }
-        
-        .footer-subsection p {
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
+
         
         .footer-links {
             list-style: none;
@@ -816,9 +784,9 @@
             margin-bottom: 20px;
             position: relative;
             z-index: 100;
-            max-width: 1200px;
-            margin-left: auto;
-            margin-right: auto;
+            width: 100%;
+            background: var(--footer-bg);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         
         .nav-logo {
@@ -836,7 +804,7 @@
         .nav-logo span {
             font-size: 1.4rem;
             font-weight: 600;
-            color: var(--text-color);
+            color: var(--footer-text);
         }
         
         .nav-links {
@@ -845,7 +813,7 @@
         }
         
         .nav-link {
-            color: var(--text-color);
+            color: var(--footer-text);
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s ease;
@@ -864,7 +832,7 @@
         }
         
         .nav-link:hover {
-            color: var(--primary-color);
+            color: #ffffff;
         }
         
         .nav-link:hover::after {
@@ -872,8 +840,8 @@
         }
         
         .nav-cta {
-            background: var(--primary-color);
-            color: white;
+            background: #ffffff;
+            color: var(--footer-bg);
             padding: 10px 20px;
             border-radius: 50px;
             font-weight: 500;
@@ -881,7 +849,7 @@
         }
         
         .nav-cta:hover {
-            background: var(--secondary-color);
+            background: #f0f0f0;
             transform: translateY(-2px);
         }
         
@@ -889,7 +857,7 @@
             display: none;
             background: none;
             border: none;
-            color: var(--text-color);
+            color: var(--footer-text);
             font-size: 1.5rem;
             cursor: pointer;
         }
@@ -936,11 +904,6 @@
                 grid-template-columns: 1fr;
                 gap: 30px;
                 text-align: center;
-            }
-            
-            .footer-right-content {
-                grid-template-columns: 1fr;
-                gap: 20px;
             }
             
             .footer-section h3::after {
@@ -1317,8 +1280,24 @@
             margin: 0 auto;
             padding: 40px 30px 0 30px;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 48px;
+            align-items: flex-start;
+            text-align: left;
+        }
+        .footer-section {
+            margin: 0;
+            padding: 0 10px 30px 10px;
+        }
+        @media (max-width: 900px) {
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 24px;
+                text-align: center;
+            }
+            .footer-section {
+                padding: 0 0 24px 0;
+            }
         }
 
         .footer-bottom {
@@ -1489,25 +1468,21 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <h3>AI Investment Advisor</h3>
-                    <p>Making investment decisions smarter<br> and more accessible.</p>
+                    <p>Making investment decisions smarter and more accessible.</p>
                 </div>
                 <div class="footer-section">
-                    <div class="footer-right-content">
-                        <div class="footer-subsection">
-                            <h3>Quick Links</h3>
-                            <ul class="footer-links">
-                                <li><a href="/">Home</a></li>
-                                <li><a href="/chat.html">Chat</a></li>
-                                <li><a href="#features">Features</a></li>
-                                <li><a href="#feedback">Feedback</a></li>
-                            </ul>
-                        </div>
-                        <div class="footer-subsection">
-                            <h3>Contact</h3>
-                            <p>Email: singhalastha26@gmail.com</p>
-                            <p>Phone: +91 7452977402</p>
-                        </div>
-                    </div>
+                    <h3>Quick Links</h3>
+                    <ul class="footer-links">
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/chat.html">Chat</a></li>
+                        <li><a href="#features">Features</a></li>
+                        <li><a href="#feedback">Feedback</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h3>Contact</h3>
+                    <p>Email: singhalastha26@gmail.com</p>
+                    <p>Phone: +91 7452977402</p>
                 </div>
             </div>
             <div class="footer-bottom">

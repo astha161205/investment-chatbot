@@ -7,6 +7,10 @@ import re
 import logging
 from datetime import datetime
 import google.generativeai as genai  # Import Google Generative AI library
+from dotenv import load_dotenv
+
+load_dotenv()
+api_key = os.getenv("GEMINI_API_KEY")
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -14,9 +18,6 @@ logging.basicConfig(level=logging.INFO,
 
 # Initialize Flask app
 app = Flask(__name__)
-
-# Set your Google API key
-api_key = 'AIzaSyApehQ1TkiRU0_WMjlvavHUPyzKIxBoli8'
 
 # Configure the Gemini model
 genai.configure(api_key=api_key)
