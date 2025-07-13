@@ -8,6 +8,7 @@ import logging
 from datetime import datetime
 import google.generativeai as genai  # Import Google Generative AI library
 from dotenv import load_dotenv
+import time
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -26,11 +27,28 @@ model = genai.GenerativeModel('gemini-1.5-pro')  # Use the Gemini 1.5 Pro model
 # Track API availability
 api_available = True  # Set to True to indicate API is available
 
-# Function to fetch stock data
+# Simple in-memory cache for stock data
+stock_cache = {}  # {symbol: (data, timestamp)}
+
+# Function to fetch stock data with caching and error handling
 def get_stock_data(ticker):
-    stock = yf.Ticker(ticker)
-    data = stock.history(period="1d")
-    return data
+    now = time.time()
+    cache_duration = 180  # Cache for 3 minutes
+    if ticker in stock_cache:
+        data, timestamp = stock_cache[ticker]
+        if now - timestamp < cache_duration:
+            return data
+    try:
+        stock = yf.Ticker(ticker)
+        data = stock.history(period="1d")
+        stock_cache[ticker] = (data, now)
+        return data
+    except Exception as e:
+        print(f"Error fetching data for {ticker}: {e}")
+        # Optionally, return last cached data if available
+        if ticker in stock_cache:
+            return stock_cache[ticker][0]
+        return None
 
 # Serve the homepage
 @app.route('/')
@@ -52,15 +70,14 @@ def styles():
 def stock():
     ticker = request.args.get('ticker')
     data = get_stock_data(ticker)
-    
+    if data is None or data.empty:
+        return jsonify({'error': 'Data temporarily unavailable due to rate limits. Please try again later.'}), 503
     # Convert the data to a format that can be JSON serialized
     result = {}
     for column in data.columns:
         result[column] = {}
         for timestamp, value in data[column].items():
-            # Convert timestamp to string to make it JSON serializable
             result[column][str(timestamp)] = value
-    
     return jsonify(result)
 
 
