@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time Stock Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group label {
+            color: white;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        input, select, button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus {
+            box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.3);
+        }
+
+        button {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button.secondary {
+            background: linear-gradient(45deg, #2196F3, #1976D2);
+        }
+
+        button.danger {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.error {
+            background: #f44336;
+        }
+
+        .stock-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stock-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stock-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .stock-card.updating {
+            animation: glow 1s ease-in-out infinite alternate;
+        }
+
+        .stock-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .stock-symbol {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stock-name {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .price-section {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+
+        .current-price {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .price-change {
+            font-size: 1.1rem;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        .price-change.positive {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+        }
+
+        .price-change.negative {
+            background: rgba(244, 67, 54, 0.2);
+            color: #f44336;
+        }
+
+        .price-change.neutral {
+            background: rgba(158, 158, 158, 0.2);
+            color: #9e9e9e;
+        }
+
+        .stock-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 0.9rem;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .detail-label {
+            color: #666;
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: #333;
+            font-weight: 600;
+        }
+
+        .data-age {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            color: #999;
+            background: rgba(0,0,0,0.1);
+            padding: 2px 6px;
+            border-radius: 10px;
+        }
+
+        .alerts-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .alerts-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .alert-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .alert-info {
+            flex: 1;
+        }
+
+        .alert-ticker {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .alert-threshold {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 8px 32px rgba(0,0,0,0.1); }
+            to { box-shadow: 0 8px 32px rgba(76, 175, 80, 0.3); }
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.1);
+            border: 1px solid rgba(244, 67, 54, 0.3);
+            color: #f44336;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .stock-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📈 Real-Time Stock Dashboard</h1>
+            <p>Live stock prices with automatic updates every 30 seconds</p>
+        </div>
+
+        <div class="status-bar">
+            <div class="status-indicator">
+                <div class="status-dot" id="statusDot"></div>
+                <span id="statusText">Connecting...</span>
+            </div>
+            <div>
+                <span id="lastUpdate">Last update: Never</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="tickerInput">Add Stock Symbol</label>
+                <input type="text" id="tickerInput" placeholder="e.g., AAPL, MSFT, TCS.NS" maxlength="10">
+            </div>
+            <button onclick="addStock()">Add Stock</button>
+            <button class="secondary" onclick="refreshAll()">Refresh All</button>
+            <button class="danger" onclick="clearAll()">Clear All</button>
+            <div class="input-group">
+                <label for="autoRefresh">Auto Refresh</label>
+                <select id="autoRefresh" onchange="toggleAutoRefresh()">
+                    <option value="30">30 seconds</option>
+                    <option value="60">1 minute</option>
+                    <option value="300">5 minutes</option>
+                    <option value="0">Disabled</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="stockGrid" class="stock-grid">
+            <div class="loading">Add stocks to get started...</div>
+        </div>
+
+        <div class="alerts-section">
+            <h3>🔔 Price Alerts</h3>
+            <div id="alertsList">
+                <p>No alerts set. Use the chat interface to set price alerts.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let stocks = [];
+        let autoRefreshInterval = null;
+        let isConnected = true;
+
+        // Initialize with some popular stocks
+        const defaultStocks = ['AAPL', 'MSFT', 'GOOGL', 'TSLA', 'RELIANCE.NS', 'TCS.NS'];
+        
+        // Load saved stocks from localStorage
+        function loadSavedStocks() {
+            const saved = localStorage.getItem('dashboard_stocks');
+            if (saved) {
+                stocks = JSON.parse(saved);
+            } else {
+                stocks = defaultStocks;
+                saveStocks();
+            }
+            updateStockGrid();
+        }
+
+        function saveStocks() {
+            localStorage.setItem('dashboard_stocks', JSON.stringify(stocks));
+        }
+
+        function addStock() {
+            const input = document.getElementById('tickerInput');
+            const ticker = input.value.trim().toUpperCase();
+            
+            if (!ticker) {
+                alert('Please enter a stock symbol');
+                return;
+            }
+            
+            if (stocks.includes(ticker)) {
+                alert('Stock already added');
+                return;
+            }
+            
+            stocks.push(ticker);
+            saveStocks();
+            updateStockGrid();
+            input.value = '';
+            
+            // Fetch data for the new stock
+            fetchStockData(ticker);
+        }
+
+        function removeStock(ticker) {
+            stocks = stocks.filter(s => s !== ticker);
+            saveStocks();
+            updateStockGrid();
+        }
+
+        function clearAll() {
+            if (confirm('Are you sure you want to clear all stocks?')) {
+                stocks = [];
+                saveStocks();
+                updateStockGrid();
+            }
+        }
+
+        function updateStockGrid() {
+            const grid = document.getElementById('stockGrid');
+            
+            if (stocks.length === 0) {
+                grid.innerHTML = '<div class="loading">Add stocks to get started...</div>';
+                return;
+            }
+            
+            grid.innerHTML = stocks.map(ticker => `
+                <div class="stock-card" id="card-${ticker}">
+                    <div class="data-age" id="age-${ticker}">Loading...</div>
+                    <div class="stock-header">
+                        <div>
+                            <div class="stock-symbol">${ticker}</div>
+                            <div class="stock-name" id="name-${ticker}">Loading...</div>
+                        </div>
+                        <button onclick="removeStock('${ticker}')" style="background: #f44336; padding: 5px 10px; font-size: 0.8rem;">×</button>
+                    </div>
+                    <div class="price-section">
+                        <div class="current-price" id="price-${ticker}">--</div>
+                        <div class="price-change neutral" id="change-${ticker}">--</div>
+                    </div>
+                    <div class="stock-details">
+                        <div class="detail-item">
+                            <span class="detail-label">Open</span>
+                            <span class="detail-value" id="open-${ticker}">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">High</span>
+                            <span class="detail-value" id="high-${ticker}">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Low</span>
+                            <span class="detail-value" id="low-${ticker}">--</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Volume</span>
+                            <span class="detail-value" id="volume-${ticker}">--</span>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        async function fetchStockData(ticker) {
+            const card = document.getElementById(`card-${ticker}`);
+            if (card) {
+                card.classList.add('updating');
+            }
+            
+            try {
+                const response = await fetch(`/stock/realtime?ticker=${ticker}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    updateStockCard(ticker, data);
+                    updateStatus(true);
+                } else {
+                    showError(ticker, data.error);
+                    updateStatus(false);
+                }
+            } catch (error) {
+                showError(ticker, 'Network error');
+                updateStatus(false);
+            } finally {
+                if (card) {
+                    card.classList.remove('updating');
+                }
+            }
+        }
+
+        function updateStockCard(ticker, data) {
+            const currentPrice = data.current_price;
+            const timestamp = new Date(data.timestamp);
+            const dataAge = data.data_age_seconds;
+            
+            // Update price
+            document.getElementById(`price-${ticker}`).textContent = `$${currentPrice.toFixed(2)}`;
+            
+            // Update data age
+            const ageElement = document.getElementById(`age-${ticker}`);
+            if (dataAge < 60) {
+                ageElement.textContent = `${Math.round(dataAge)}s ago`;
+                ageElement.style.color = '#4CAF50';
+            } else if (dataAge < 300) {
+                ageElement.textContent = `${Math.round(dataAge/60)}m ago`;
+                ageElement.style.color = '#FF9800';
+            } else {
+                ageElement.textContent = `${Math.round(dataAge/60)}m ago`;
+                ageElement.style.color = '#f44336';
+            }
+            
+            // Update stock details if available
+            if (data.data && data.data.Open) {
+                const openPrice = Object.values(data.data.Open)[0];
+                const highPrice = Object.values(data.data.High)[0];
+                const lowPrice = Object.values(data.data.Low)[0];
+                const volume = Object.values(data.data.Volume)[0];
+                
+                document.getElementById(`open-${ticker}`).textContent = `$${openPrice.toFixed(2)}`;
+                document.getElementById(`high-${ticker}`).textContent = `$${highPrice.toFixed(2)}`;
+                document.getElementById(`low-${ticker}`).textContent = `$${lowPrice.toFixed(2)}`;
+                document.getElementById(`volume-${ticker}`).textContent = formatVolume(volume);
+                
+                // Calculate and display price change
+                const change = currentPrice - openPrice;
+                const changePercent = (change / openPrice) * 100;
+                const changeElement = document.getElementById(`change-${ticker}`);
+                
+                if (change > 0) {
+                    changeElement.textContent = `+$${change.toFixed(2)} (+${changePercent.toFixed(2)}%)`;
+                    changeElement.className = 'price-change positive';
+                } else if (change < 0) {
+                    changeElement.textContent = `-$${Math.abs(change).toFixed(2)} (${changePercent.toFixed(2)}%)`;
+                    changeElement.className = 'price-change negative';
+                } else {
+                    changeElement.textContent = '$0.00 (0.00%)';
+                    changeElement.className = 'price-change neutral';
+                }
+            }
+            
+            // Update last update time
+            document.getElementById('lastUpdate').textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+        }
+
+        function showError(ticker, message) {
+            const card = document.getElementById(`card-${ticker}`);
+            if (card) {
+                card.innerHTML = `
+                    <div class="error-message">
+                        <strong>${ticker}</strong>: ${message}
+                        <button onclick="fetchStockData('${ticker}')" style="margin-left: 10px; padding: 5px 10px;">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        function formatVolume(volume) {
+            if (volume >= 1000000) {
+                return `${(volume / 1000000).toFixed(1)}M`;
+            } else if (volume >= 1000) {
+                return `${(volume / 1000).toFixed(1)}K`;
+            }
+            return volume.toLocaleString();
+        }
+
+        function updateStatus(connected) {
+            const statusDot = document.getElementById('statusDot');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                statusDot.className = 'status-dot';
+                statusText.textContent = 'Connected';
+                isConnected = true;
+            } else {
+                statusDot.className = 'status-dot error';
+                statusText.textContent = 'Connection Error';
+                isConnected = false;
+            }
+        }
+
+        function refreshAll() {
+            stocks.forEach(ticker => fetchStockData(ticker));
+        }
+
+        function toggleAutoRefresh() {
+            const interval = document.getElementById('autoRefresh').value;
+            
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            
+            if (interval > 0) {
+                autoRefreshInterval = setInterval(refreshAll, interval * 1000);
+            }
+        }
+
+        // Initialize dashboard
+        loadSavedStocks();
+        refreshAll();
+        toggleAutoRefresh();
+        
+        // Set up periodic refresh
+        setInterval(refreshAll, 30000); // Refresh every 30 seconds
+    </script>
+</body>
+</html> 

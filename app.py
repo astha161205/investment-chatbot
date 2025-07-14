@@ -10,6 +10,9 @@ import google.generativeai as genai  # Import Google Generative AI library
 from dotenv import load_dotenv
 import time
 from yfinance.exceptions import YFRateLimitError
+import threading
+from collections import deque
+import random
 
 load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
@@ -28,22 +31,196 @@ model = genai.GenerativeModel('gemini-1.5-pro')  # Use the Gemini 1.5 Pro model
 # Track API availability
 api_available = True  # Set to True to indicate API is available
 
-# Simple in-memory cache for stock data
-stock_cache = {}  # {symbol: (data, timestamp)}
-CACHE_DURATION = 300  # seconds (5 minutes)
+# Enhanced rate limiting and caching system
+class YahooFinanceRateLimiter:
+    def __init__(self):
+        self.last_request_time = 0
+        self.min_delay = 1.0  # Minimum 1 second between requests
+        self.request_queue = deque()
+        self.processing = False
+        self.lock = threading.Lock()
+        self.rate_limit_window = 60  # 60 seconds
+        self.max_requests_per_window = 30  # Max 30 requests per minute
+        self.request_times = deque()
+        
+    def wait_if_needed(self):
+        """Wait if we need to respect rate limits"""
+        with self.lock:
+            current_time = time.time()
+            
+            # Remove old requests from the window
+            while self.request_times and current_time - self.request_times[0] > self.rate_limit_window:
+                self.request_times.popleft()
+            
+            # Check if we're at the rate limit
+            if len(self.request_times) >= self.max_requests_per_window:
+                sleep_time = self.rate_limit_window - (current_time - self.request_times[0])
+                if sleep_time > 0:
+                    app.logger.warning(f"Rate limit reached, waiting {sleep_time:.2f} seconds")
+                    time.sleep(sleep_time)
+                    current_time = time.time()
+            
+            # Ensure minimum delay between requests
+            time_since_last = current_time - self.last_request_time
+            if time_since_last < self.min_delay:
+                sleep_time = self.min_delay - time_since_last
+                time.sleep(sleep_time)
+            
+            # Record this request
+            self.last_request_time = time.time()
+            self.request_times.append(current_time)
 
-# Function to fetch stock data with caching and error handling
-def get_stock_data(ticker):
+# Global rate limiter instance
+rate_limiter = YahooFinanceRateLimiter()
+
+# Multi-tier cache system for real-time updates
+stock_cache = {}  # {symbol: {'data': data, 'time': timestamp, 'error_count': 0, 'last_update': timestamp}}
+REAL_TIME_CACHE_DURATION = 30  # 30 seconds for real-time data
+SHORT_CACHE_DURATION = 300  # 5 minutes for short-term cache
+LONG_CACHE_DURATION = 900  # 15 minutes for long-term cache
+MAX_ERROR_COUNT = 3  # Max consecutive errors before backing off
+ERROR_BACKOFF_TIME = 300  # 5 minutes backoff after max errors
+
+# Real-time update tracking
+real_time_subscribers = {}  # {ticker: [websocket_connections]}
+price_alerts = {}  # {ticker: {'last_price': price, 'subscribers': [{'user_id': id, 'threshold': price}]}}
+
+# Function to fetch stock data with enhanced rate limiting and error handling
+def get_stock_data(ticker, force_refresh=False, cache_duration=None):
     now = time.time()
-    if ticker in stock_cache and now - stock_cache[ticker]['time'] < CACHE_DURATION:
-        return stock_cache[ticker]['data']
-    stock = yf.Ticker(ticker)
+    
+    # Use specified cache duration or default to real-time
+    if cache_duration is None:
+        cache_duration = REAL_TIME_CACHE_DURATION
+    
+    # Check cache first (unless force refresh)
+    if not force_refresh and ticker in stock_cache:
+        cache_entry = stock_cache[ticker]
+        
+        # If we have recent data, return it
+        if now - cache_entry['time'] < cache_duration and cache_entry['data'] is not None:
+            app.logger.debug(f"Cache hit for {ticker} (age: {now - cache_entry['time']:.1f}s)")
+            return cache_entry['data']
+        
+        # If we've had too many errors recently, check if backoff period is over
+        if cache_entry.get('error_count', 0) >= MAX_ERROR_COUNT:
+            if now - cache_entry.get('last_error_time', 0) < ERROR_BACKOFF_TIME:
+                app.logger.warning(f"Still in backoff period for {ticker}")
+                return None
+    
+    # Wait for rate limiter
+    rate_limiter.wait_if_needed()
+    
     try:
+        app.logger.info(f"Fetching fresh data for {ticker}")
+        stock = yf.Ticker(ticker)
         data = stock.history(period="1d")
-        stock_cache[ticker] = {'data': data, 'time': now}
+        
+        if data.empty:
+            app.logger.warning(f"Empty data returned for {ticker}")
+            # Cache the empty result to avoid repeated requests
+            stock_cache[ticker] = {
+                'data': None,
+                'time': now,
+                'error_count': stock_cache.get(ticker, {}).get('error_count', 0) + 1,
+                'last_error_time': now,
+                'last_update': now
+            }
+            return None
+        
+        # Success - cache the data and reset error count
+        stock_cache[ticker] = {
+            'data': data,
+            'time': now,
+            'error_count': 0,
+            'last_error_time': None,
+            'last_update': now
+        }
+        
+        # Update price alerts if this ticker has subscribers
+        if ticker in price_alerts and not data.empty:
+            current_price = data['Close'].iloc[-1]
+            price_alerts[ticker]['last_price'] = current_price
+            
+            # Check for price alerts
+            check_price_alerts(ticker, current_price)
+        
+        app.logger.info(f"Successfully fetched fresh data for {ticker}")
         return data
+        
     except YFRateLimitError:
+        app.logger.error(f"Rate limited by Yahoo Finance for {ticker}")
+        # Increment error count and set backoff
+        current_errors = stock_cache.get(ticker, {}).get('error_count', 0) + 1
+        stock_cache[ticker] = {
+            'data': None,
+            'time': now,
+            'error_count': current_errors,
+            'last_error_time': now,
+            'last_update': now
+        }
+        
+        # Increase delay if we're getting rate limited
+        if current_errors >= 2:
+            rate_limiter.min_delay = min(rate_limiter.min_delay * 1.5, 5.0)
+            app.logger.warning(f"Increased delay to {rate_limiter.min_delay}s due to rate limiting")
+        
         return None
+        
+    except Exception as e:
+        app.logger.error(f"Error fetching data for {ticker}: {str(e)}")
+        # Increment error count
+        current_errors = stock_cache.get(ticker, {}).get('error_count', 0) + 1
+        stock_cache[ticker] = {
+            'data': None,
+            'time': now,
+            'error_count': current_errors,
+            'last_error_time': now,
+            'last_update': now
+        }
+        return None
+
+def get_stock_data_real_time(ticker):
+    """Get real-time stock data with minimal caching"""
+    return get_stock_data(ticker, force_refresh=False, cache_duration=REAL_TIME_CACHE_DURATION)
+
+def get_stock_data_cached(ticker):
+    """Get stock data with longer caching for non-critical requests"""
+    return get_stock_data(ticker, force_refresh=False, cache_duration=SHORT_CACHE_DURATION)
+
+def check_price_alerts(ticker, current_price):
+    """Check and trigger price alerts"""
+    if ticker not in price_alerts:
+        return
+    
+    alert_data = price_alerts[ticker]
+    for subscriber in alert_data.get('subscribers', []):
+        threshold = subscriber.get('threshold')
+        if threshold and current_price >= threshold:
+            # Trigger alert (in a real app, this would send notification)
+            app.logger.info(f"Price alert triggered for {ticker}: {current_price} >= {threshold}")
+            # Remove triggered alert
+            alert_data['subscribers'].remove(subscriber)
+
+# Function to get stock data with retry logic
+def get_stock_data_with_retry(ticker, max_retries=2, real_time=False):
+    """Get stock data with retry logic and exponential backoff"""
+    for attempt in range(max_retries + 1):
+        if real_time:
+            data = get_stock_data_real_time(ticker)
+        else:
+            data = get_stock_data_cached(ticker)
+            
+        if data is not None:
+            return data
+        
+        if attempt < max_retries:
+            # Exponential backoff: 2^attempt seconds
+            backoff_time = 2 ** attempt
+            app.logger.info(f"Retrying {ticker} in {backoff_time} seconds (attempt {attempt + 1}/{max_retries + 1})")
+            time.sleep(backoff_time)
+    
+    return None
 
 # Serve the homepage
 @app.route('/')
@@ -60,13 +237,38 @@ def chat_page():
 def styles():
     return send_from_directory('.', 'styles.css')
 
-# Endpoint to get stock data
+# Serve rate limit monitor page
+@app.route('/monitor')
+def monitor():
+    return send_from_directory('.', 'rate_limit_monitor.html')
+
+# Serve real-time dashboard
+@app.route('/dashboard')
+def dashboard():
+    return send_from_directory('.', 'realtime_dashboard.html')
+
+# Endpoint to get stock data (cached)
 @app.route('/stock', methods=['GET'])
 def stock():
     ticker = request.args.get('ticker')
-    data = get_stock_data(ticker)
-    if data is None:
-        return jsonify({"error": "Rate limited by Yahoo Finance. Please try again later."}), 429
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+    
+    data = get_stock_data_with_retry(ticker, real_time=False)
+    if data is None or data.empty:
+        # Check if we're in a backoff period
+        cache_entry = stock_cache.get(ticker, {})
+        if cache_entry.get('error_count', 0) >= MAX_ERROR_COUNT:
+            return jsonify({
+                "error": "Service temporarily unavailable due to rate limiting. Please try again in a few minutes.",
+                "retry_after": ERROR_BACKOFF_TIME
+            }), 429
+        else:
+            return jsonify({
+                "error": "Unable to fetch data for this ticker. Please check the symbol and try again.",
+                "ticker": ticker
+            }), 404
+    
     # Convert the data to a format that can be JSON serialized
     result = {}
     for column in data.columns:
@@ -74,6 +276,144 @@ def stock():
         for timestamp, value in data[column].items():
             result[column][str(timestamp)] = value
     return jsonify(result)
+
+# Endpoint to get real-time stock data
+@app.route('/stock/realtime', methods=['GET'])
+def stock_realtime():
+    ticker = request.args.get('ticker')
+    if not ticker:
+        return jsonify({"error": "No ticker provided"}), 400
+    
+    data = get_stock_data_with_retry(ticker, real_time=True)
+    if data is None or data.empty:
+        # Check if we're in a backoff period
+        cache_entry = stock_cache.get(ticker, {})
+        if cache_entry.get('error_count', 0) >= MAX_ERROR_COUNT:
+            return jsonify({
+                "error": "Service temporarily unavailable due to rate limiting. Please try again in a few minutes.",
+                "retry_after": ERROR_BACKOFF_TIME
+            }), 429
+        else:
+            return jsonify({
+                "error": "Unable to fetch data for this ticker. Please check the symbol and try again.",
+                "ticker": ticker
+            }), 404
+    
+    # Get current price and timestamp
+    current_price = data['Close'].iloc[-1]
+    current_time = data.index[-1]
+    
+    # Convert the data to a format that can be JSON serialized
+    result = {
+        'ticker': ticker,
+        'current_price': float(current_price),
+        'timestamp': str(current_time),
+        'data_age_seconds': time.time() - stock_cache[ticker]['last_update'],
+        'data': {}
+    }
+    
+    for column in data.columns:
+        result['data'][column] = {}
+        for timestamp, value in data[column].items():
+            result['data'][column][str(timestamp)] = value
+    
+    return jsonify(result)
+
+# Endpoint to get multiple stocks in real-time
+@app.route('/stocks/batch', methods=['POST'])
+def stocks_batch():
+    data = request.get_json()
+    tickers = data.get('tickers', [])
+    real_time = data.get('real_time', False)
+    
+    if not tickers:
+        return jsonify({"error": "No tickers provided"}), 400
+    
+    if len(tickers) > 10:  # Limit batch size
+        return jsonify({"error": "Maximum 10 tickers allowed per batch"}), 400
+    
+    results = {}
+    errors = []
+    
+    for ticker in tickers:
+        try:
+            stock_data = get_stock_data_with_retry(ticker, real_time=real_time)
+            if stock_data is not None and not stock_data.empty:
+                current_price = stock_data['Close'].iloc[-1]
+                results[ticker] = {
+                    'price': float(current_price),
+                    'timestamp': str(stock_data.index[-1]),
+                    'data_age_seconds': time.time() - stock_cache[ticker]['last_update']
+                }
+            else:
+                errors.append(f"Could not fetch data for {ticker}")
+        except Exception as e:
+            errors.append(f"Error fetching {ticker}: {str(e)}")
+    
+    return jsonify({
+        'results': results,
+        'errors': errors,
+        'timestamp': time.time()
+    })
+
+# Endpoint to set price alerts
+@app.route('/alerts/set', methods=['POST'])
+def set_price_alert():
+    data = request.get_json()
+    ticker = data.get('ticker')
+    threshold = data.get('threshold')
+    user_id = data.get('user_id', 'anonymous')
+    
+    if not ticker or not threshold:
+        return jsonify({"error": "Ticker and threshold required"}), 400
+    
+    try:
+        threshold = float(threshold)
+    except ValueError:
+        return jsonify({"error": "Invalid threshold value"}), 400
+    
+    # Initialize price alerts for this ticker if not exists
+    if ticker not in price_alerts:
+        price_alerts[ticker] = {
+            'last_price': None,
+            'subscribers': []
+        }
+    
+    # Add subscriber
+    price_alerts[ticker]['subscribers'].append({
+        'user_id': user_id,
+        'threshold': threshold,
+        'created_at': time.time()
+    })
+    
+    app.logger.info(f"Price alert set for {ticker} at {threshold} by {user_id}")
+    
+    return jsonify({
+        'success': True,
+        'message': f'Alert set for {ticker} at ${threshold}',
+        'alert_id': f"{ticker}_{threshold}_{user_id}"
+    })
+
+# Endpoint to get current alerts
+@app.route('/alerts/list', methods=['GET'])
+def list_alerts():
+    user_id = request.args.get('user_id', 'anonymous')
+    
+    user_alerts = []
+    for ticker, alert_data in price_alerts.items():
+        for subscriber in alert_data.get('subscribers', []):
+            if subscriber.get('user_id') == user_id:
+                user_alerts.append({
+                    'ticker': ticker,
+                    'threshold': subscriber.get('threshold'),
+                    'current_price': alert_data.get('last_price'),
+                    'created_at': subscriber.get('created_at')
+                })
+    
+    return jsonify({
+        'alerts': user_alerts,
+        'count': len(user_alerts)
+    })
 
 
 # Function to get information for a specific stock symbol
@@ -85,14 +425,12 @@ def get_specific_stock_info(symbol, include_recommendation=True, include_news=Fa
         if symbol == 'AIRTELPP.NS':
             app.logger.info("Processing special case for AIRTELPP.NS")
             try:
-                stock = yf.Ticker(symbol)
-                data = stock.history(period="1d")
+                data = get_stock_data_with_retry(symbol)
                 
-                if data.empty:
+                if data is None or data.empty:
                     app.logger.warning(f"Empty data returned for {symbol}, trying alternative approach")
                     # Try with regular Airtel symbol
-                    stock = yf.Ticker("BHARTIARTL.NS")
-                    data = stock.history(period="1d")
+                    data = get_stock_data_with_retry("BHARTIARTL.NS")
                     
                     if data.empty:
                         app.logger.warning("Could not get data for BHARTIARTL.NS either")
@@ -111,7 +449,10 @@ def get_specific_stock_info(symbol, include_recommendation=True, include_news=Fa
                 return "I encountered an error while fetching data for Bharti Airtel Partly Paid shares (AIRTELPP.NS). This may be because the partly paid shares have been converted to fully paid shares. Please try querying BHARTIARTL.NS for regular Bharti Airtel shares."
         
         stock = yf.Ticker(symbol)
-        data = stock.history(period="1d")
+        data = get_stock_data_with_retry(symbol, real_time=True)
+        if data is None:
+            app.logger.warning(f"Could not fetch data for {symbol} after retries")
+            return None
         
         if data.empty:
             app.logger.info(f"No data found for {symbol}")
@@ -271,7 +612,10 @@ def get_stock_recommendation(symbol, stock, info, current_data):
         # ---------------------
         
         # Get historical data for technical analysis
-        historical_data = stock.history(period="200d")
+        historical_data = get_stock_data_with_retry(symbol, max_retries=1)  # Use shorter retry for historical data
+        if historical_data is None:
+            # Fallback to current data only
+            historical_data = current_data
         
         if not historical_data.empty and len(historical_data) > 50:
             # Moving Averages
@@ -1305,6 +1649,67 @@ def api_status():
             "model": "gemini-1.5-pro",
             "api_key_prefix": api_key[:5]
         })
+
+# Add endpoint to check Yahoo Finance rate limiter status
+@app.route('/rate-limit-status', methods=['GET'])
+def rate_limit_status():
+    """Get current rate limiter status and cache information"""
+    with rate_limiter.lock:
+        current_time = time.time()
+        
+        # Calculate requests in current window
+        while rate_limiter.request_times and current_time - rate_limiter.request_times[0] > rate_limiter.rate_limit_window:
+            rate_limiter.request_times.popleft()
+        
+        requests_in_window = len(rate_limiter.request_times)
+        
+        # Get cache statistics
+        cache_stats = {
+            'total_cached': len(stock_cache),
+            'cached_with_errors': sum(1 for entry in stock_cache.values() if entry.get('error_count', 0) > 0),
+            'in_backoff': sum(1 for entry in stock_cache.values() 
+                            if entry.get('error_count', 0) >= MAX_ERROR_COUNT and 
+                            current_time - entry.get('last_error_time', 0) < ERROR_BACKOFF_TIME)
+        }
+        
+        return jsonify({
+            'rate_limiter': {
+                'current_delay': rate_limiter.min_delay,
+                'requests_in_window': requests_in_window,
+                'max_requests_per_window': rate_limiter.max_requests_per_window,
+                'window_remaining': max(0, rate_limiter.rate_limit_window - (current_time - (rate_limiter.request_times[0] if rate_limiter.request_times else current_time)))
+            },
+            'cache_stats': cache_stats,
+            'timestamp': current_time
+        })
+
+# Add endpoint to reset rate limiter and clear cache
+@app.route('/reset-rate-limiter', methods=['POST'])
+def reset_rate_limiter():
+    """Reset rate limiter and clear cache (admin function)"""
+    try:
+        with rate_limiter.lock:
+            # Reset rate limiter
+            rate_limiter.min_delay = 1.0
+            rate_limiter.request_times.clear()
+            rate_limiter.last_request_time = 0
+            
+            # Clear cache
+            stock_cache.clear()
+            
+            app.logger.info("Rate limiter and cache reset successfully")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Rate limiter and cache reset successfully',
+                'timestamp': time.time()
+            })
+    except Exception as e:
+        app.logger.error(f"Error resetting rate limiter: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 # Handle investment advice queries
 def handle_investment_advice_query(query):
