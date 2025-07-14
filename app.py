@@ -1749,18 +1749,51 @@ def get_price_from_finnhub(symbol, api_key=FINNHUB_API_KEY):
         app.logger.error(f"Finnhub error for {symbol}: {e}")
     return None
 
-# Unified stock price fetcher: Finnhub for US, Yahoo for others
+# Map Yahoo index symbols to Finnhub equivalents
+INDEX_SYMBOL_MAP = {
+    "^DJI": "DJI",
+    "^IXIC": "IXIC",
+    "^GSPC": "GSPC",
+    "^N225": "NI225",
+    # Add more as needed
+}
+
 def get_unified_stock_price(symbol):
-    if is_us_stock(symbol):
+    app.logger.info(f"Fetching {symbol} using unified logic")
+    # Check if it's a mapped index
+    if symbol in INDEX_SYMBOL_MAP:
+        finnhub_symbol = INDEX_SYMBOL_MAP[symbol]
+        price = get_price_from_finnhub(finnhub_symbol)
+        if price is not None:
+            app.logger.info(f"Used Finnhub for index {symbol} (as {finnhub_symbol})")
+            return {'source': 'finnhub', 'price': price}
+        else:
+            app.logger.info(f"Finnhub did not return data for index {symbol} (as {finnhub_symbol}), falling back to Yahoo Finance")
+    elif is_us_stock(symbol):
         price = get_price_from_finnhub(symbol)
         if price is not None:
+            app.logger.info(f"Used Finnhub for US stock {symbol}")
             return {'source': 'finnhub', 'price': price}
-    # Fallback to Yahoo Finance (or for non-US)
+        else:
+            app.logger.info(f"Finnhub did not return data for US stock {symbol}, falling back to Yahoo Finance")
+    # Fallback to Yahoo Finance
     data = get_stock_data_with_retry(symbol, max_retries=2, real_time=True)
     if data is not None and not data.empty:
         price = data['Close'].iloc[-1]
+        app.logger.info(f"Used Yahoo Finance for {symbol}")
         return {'source': 'yahoo', 'price': price}
+    app.logger.error(f"Could not fetch price for {symbol} from any provider.")
     return {'error': 'Could not fetch price from any provider.'}
+
+@app.route('/test-finnhub', methods=['GET'])
+def test_finnhub():
+    """Test if Finnhub API key is working by fetching AAPL quote."""
+    test_symbol = 'AAPL'
+    price = get_price_from_finnhub(test_symbol)
+    if price is not None:
+        return jsonify({'success': True, 'symbol': test_symbol, 'price': price, 'message': 'Finnhub API key is working.'})
+    else:
+        return jsonify({'success': False, 'symbol': test_symbol, 'message': 'Finnhub API key is not working or rate limited.'}), 400
 
 # Run the app
 if __name__ == '__main__':
