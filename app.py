@@ -280,43 +280,10 @@ def stock():
 # Endpoint to get real-time stock data
 @app.route('/stock/realtime', methods=['GET'])
 def stock_realtime():
-    ticker = request.args.get('ticker')
-    if not ticker:
-        return jsonify({"error": "No ticker provided"}), 400
-    
-    data = get_stock_data_with_retry(ticker, real_time=True)
-    if data is None or data.empty:
-        # Check if we're in a backoff period
-        cache_entry = stock_cache.get(ticker, {})
-        if cache_entry.get('error_count', 0) >= MAX_ERROR_COUNT:
-            return jsonify({
-                "error": "Service temporarily unavailable due to rate limiting. Please try again in a few minutes.",
-                "retry_after": ERROR_BACKOFF_TIME
-            }), 429
-        else:
-            return jsonify({
-                "error": "Unable to fetch data for this ticker. Please check the symbol and try again.",
-                "ticker": ticker
-            }), 404
-    
-    # Get current price and timestamp
-    current_price = data['Close'].iloc[-1]
-    current_time = data.index[-1]
-    
-    # Convert the data to a format that can be JSON serialized
-    result = {
-        'ticker': ticker,
-        'current_price': float(current_price),
-        'timestamp': str(current_time),
-        'data_age_seconds': time.time() - stock_cache[ticker]['last_update'],
-        'data': {}
-    }
-    
-    for column in data.columns:
-        result['data'][column] = {}
-        for timestamp, value in data[column].items():
-            result['data'][column][str(timestamp)] = value
-    
+    symbol = request.args.get('symbol')
+    if not symbol:
+        return jsonify({'error': 'Missing symbol parameter'}), 400
+    result = get_unified_stock_price(symbol)
     return jsonify(result)
 
 # Endpoint to get multiple stocks in real-time
@@ -1760,6 +1727,40 @@ def submit_feedback():
 @app.route('/get_testimonials', methods=['GET'])
 def get_testimonials():
     return jsonify(testimonials)
+
+# Finnhub API key (replace with your actual key or use environment variable)
+FINNHUB_API_KEY = os.getenv("FINNHUB_API_KEY")
+
+# Helper: Detect if a symbol is a US stock (no dot or colon)
+def is_us_stock(symbol):
+    return '.' not in symbol and ':' not in symbol
+
+# Fetch real-time price from Finnhub
+def get_price_from_finnhub(symbol, api_key=FINNHUB_API_KEY):
+    url = f"https://finnhub.io/api/v1/quote?symbol={symbol}&token={api_key}"
+    try:
+        response = requests.get(url, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            price = data.get("c")
+            if price:
+                return price
+    except Exception as e:
+        app.logger.error(f"Finnhub error for {symbol}: {e}")
+    return None
+
+# Unified stock price fetcher: Finnhub for US, Yahoo for others
+def get_unified_stock_price(symbol):
+    if is_us_stock(symbol):
+        price = get_price_from_finnhub(symbol)
+        if price is not None:
+            return {'source': 'finnhub', 'price': price}
+    # Fallback to Yahoo Finance (or for non-US)
+    data = get_stock_data_with_retry(symbol, max_retries=2, real_time=True)
+    if data is not None and not data.empty:
+        price = data['Close'].iloc[-1]
+        return {'source': 'yahoo', 'price': price}
+    return {'error': 'Could not fetch price from any provider.'}
 
 # Run the app
 if __name__ == '__main__':
